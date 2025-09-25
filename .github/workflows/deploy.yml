@@ -56,7 +56,34 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd /home/${{ secrets.USERNAME }}/foodgram/infra
+          # Установка Docker и Docker Compose если не установлены
+          if ! command -v docker &> /dev/null; then
+            echo "Устанавливаем Docker..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh get-docker.sh
+            sudo usermod -aG docker $USER
+            rm get-docker.sh
+          fi
+          
+          if ! command -v docker-compose &> /dev/null; then
+            echo "Устанавливаем Docker Compose..."
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+          fi
+          
+          # Создаем директории проекта
+          mkdir -p /home/${{ secrets.USERNAME }}/foodgram/infra
+          cd /home/${{ secrets.USERNAME }}/foodgram
+          
+          # Клонируем репозиторий или обновляем его
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/${{ github.repository }}.git .
+          else
+            git fetch origin
+            git reset --hard origin/main
+          fi
+          
+          cd infra
           
           # Создаем .env.prod файл с секретами
           cat > .env.prod << EOF
@@ -82,6 +109,14 @@ jobs:
           
           # Очищаем старые образы
           docker system prune -f
+          
+          # Устанавливаем certbot если не установлен
+          if ! command -v certbot &> /dev/null; then
+            sudo apt update
+            sudo apt install snapd nginx -y
+            sudo snap install --classic certbot
+            sudo ln -sf /snap/bin/certbot /usr/bin/certbot
+          fi
           
           # Устанавливаем SSL сертификат (если еще не установлен)
           if [ ! -f /etc/letsencrypt/live/${{ secrets.DOMAIN_NAME }}/fullchain.pem ]; then
