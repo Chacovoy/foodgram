@@ -55,7 +55,35 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd /home/${{ secrets.USERNAME }}/foodgram-main/infra
-          docker-compose pull
-          docker-compose up -d --build
+          cd /home/${{ secrets.USERNAME }}/foodgram/infra
+          
+          # Создаем .env.prod файл с секретами
+          cat > .env.prod << EOF
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEBUG=False
+          ALLOWED_HOSTS=${{ secrets.DOMAIN_NAME }},www.${{ secrets.DOMAIN_NAME }},localhost,127.0.0.1
+          DB_ENGINE=django.db.backends.postgresql
+          DB_NAME=${{ secrets.DB_NAME }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          DB_HOST=db
+          DB_PORT=5432
+          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}
+          EOF
+          
+          # Обновляем nginx конфигурацию с доменом
+          sed -i 's/your-domain.com/${{ secrets.DOMAIN_NAME }}/g' nginx.prod.conf
+          
+          # Запускаем контейнеры
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d --build
+          
+          # Очищаем старые образы
           docker system prune -f
+          
+          # Устанавливаем SSL сертификат (если еще не установлен)
+          if [ ! -f /etc/letsencrypt/live/${{ secrets.DOMAIN_NAME }}/fullchain.pem ]; then
+            sudo certbot --nginx -d ${{ secrets.DOMAIN_NAME }} -d www.${{ secrets.DOMAIN_NAME }} --non-interactive --agree-tos --email ${{ secrets.EMAIL }}
+            docker-compose -f docker-compose.prod.yml restart nginx
+          fi
