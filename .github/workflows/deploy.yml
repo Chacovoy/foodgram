@@ -47,33 +47,6 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
     
-    - name: Setup SSH key on server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.SERVER_PASSWORD }}
-        script: |
-          # Создаем директорию .ssh если её нет
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Извлекаем публичный ключ из приватного
-          echo "${{ secrets.SSH_KEY }}" > /tmp/temp_key
-          chmod 600 /tmp/temp_key
-          ssh-keygen -y -f /tmp/temp_key > /tmp/public_key
-          
-          # Добавляем публичный ключ в authorized_keys если его там нет
-          if ! grep -Fq "$(cat /tmp/public_key)" ~/.ssh/authorized_keys 2>/dev/null; then
-            cat /tmp/public_key >> ~/.ssh/authorized_keys
-            chmod 600 ~/.ssh/authorized_keys
-            echo "SSH key added successfully"
-          else
-            echo "SSH key already exists"
-          fi
-          
-          # Удаляем временные файлы
-          rm -f /tmp/temp_key /tmp/public_key
     
     - name: Deploy to server
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
