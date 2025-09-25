@@ -72,16 +72,18 @@ jobs:
           fi
           
           # Создаем директории проекта
-          mkdir -p /home/${{ secrets.USERNAME }}/foodgram/infra
-          cd /home/${{ secrets.USERNAME }}/foodgram
+          PROJECT_DIR="/home/${{ secrets.USERNAME }}/foodgram"
           
-          # Клонируем репозиторий или обновляем его
-          if [ ! -d ".git" ]; then
-            git clone https://github.com/${{ github.repository }}.git .
-          else
-            git fetch origin
-            git reset --hard origin/main
-          fi
+          # Удаляем старую директорию если есть и создаем новую
+          sudo rm -rf $PROJECT_DIR
+          mkdir -p $PROJECT_DIR
+          cd $PROJECT_DIR
+          
+          # Клонируем репозиторий
+          git clone https://github.com/${{ github.repository }}.git .
+          
+          # Делаем пользователя владельцем директории
+          sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} $PROJECT_DIR
           
           cd infra
           
@@ -110,16 +112,12 @@ jobs:
           # Очищаем старые образы
           docker system prune -f
           
-          # Устанавливаем certbot если не установлен
-          if ! command -v certbot &> /dev/null; then
-            sudo apt update
-            sudo apt install snapd nginx -y
-            sudo snap install --classic certbot
-            sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-          fi
+          # Проверяем статус контейнеров
+          docker-compose -f docker-compose.prod.yml ps
           
-          # Устанавливаем SSL сертификат (если еще не установлен)
-          if [ ! -f /etc/letsencrypt/live/${{ secrets.DOMAIN_NAME }}/fullchain.pem ]; then
-            sudo certbot --nginx -d ${{ secrets.DOMAIN_NAME }} -d www.${{ secrets.DOMAIN_NAME }} --non-interactive --agree-tos --email ${{ secrets.EMAIL }}
-            docker-compose -f docker-compose.prod.yml restart nginx
-          fi
+          echo "✅ Деплой завершен успешно!"
+          echo "🌐 Сайт доступен по адресу: http://${{ secrets.DOMAIN_NAME }}"
+          echo "⚠️  Для получения SSL сертификата убедитесь, что:"
+          echo "   1. Домен ${{ secrets.DOMAIN_NAME }} указывает на этот сервер"
+          echo "   2. Порты 80 и 443 открыты"
+          echo "   3. Запустите вручную: sudo certbot --nginx -d ${{ secrets.DOMAIN_NAME }}"
