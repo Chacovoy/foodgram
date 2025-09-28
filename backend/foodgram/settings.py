@@ -129,6 +129,7 @@ DJOSER = {
         'user_create': ['rest_framework.permissions.AllowAny'],
     },
     'HIDE_USERS': False,
+    'LOGIN_FIELD': 'username',
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
