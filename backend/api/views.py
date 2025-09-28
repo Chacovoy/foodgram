@@ -5,7 +5,7 @@ from django.http import HttpResponse
 
 from rest_framework import viewsets, status, mixins
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from djoser.serializers import SetPasswordSerializer
@@ -291,3 +291,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         link = (f"{request.scheme}://{request.get_host()}"
                 f"/api/recipes/{recipe.id}/")
         return Response({'short-link': link})
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def avatar_upload(request):
+    """Загрузка аватарки пользователя."""
+    user = request.user
+    if 'avatar' in request.data:
+        user.avatar = request.data['avatar']
+        user.save()
+        serializer = UserGetSerializer(user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(
+        {'avatar': ['Это поле обязательно.']}, 
+        status=status.HTTP_400_BAD_REQUEST
+    )

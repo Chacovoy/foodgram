@@ -14,8 +14,11 @@ router.register('tags', TagViewSet, basename='tags')
 router.register('recipes', RecipeViewSet, basename='recipes')
 
 
+from .views import avatar_upload
+
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path('users/me/avatar/', avatar_upload, name='avatar_upload'),
 ]
