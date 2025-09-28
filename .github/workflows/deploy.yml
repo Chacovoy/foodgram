@@ -88,19 +88,17 @@ jobs:
           cd infra
           
           # Создаем .env файл с секретами
-          cat > .env << EOF
-          SECRET_KEY=${{ secrets.SECRET_KEY }}
-          DEBUG=False
-          ALLOWED_HOSTS=${{ secrets.DOMAIN_NAME }},www.${{ secrets.DOMAIN_NAME }},localhost,127.0.0.1
-          DB_ENGINE=django.db.backends.postgresql
-          DB_NAME=${{ secrets.DB_NAME }}
-          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          DB_HOST=db
-          DB_PORT=5432
-          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-          DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}
-          EOF
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+          echo "DEBUG=False" >> .env
+          echo "ALLOWED_HOSTS=${{ secrets.DOMAIN_NAME }},www.${{ secrets.DOMAIN_NAME }},localhost,127.0.0.1" >> .env
+          echo "DB_ENGINE=django.db.backends.postgresql" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "DB_HOST=db" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
+          echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}" >> .env
           
           # Обновляем nginx конфигурацию с доменом
           sed -i 's/your-domain.com/${{ secrets.DOMAIN_NAME }}/g' nginx.simple.conf
