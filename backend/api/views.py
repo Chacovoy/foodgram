@@ -68,6 +68,19 @@ class CustomUserViewSet(
         return self.retrieve(request, *args, **kwargs)
 
     @action(
+        ["PUT", "PATCH"],
+        detail=False,
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar'
+    )
+    def avatar(self, request, *args, **kwargs):
+        user = request.user
+        serializer = UserPostSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
         ["POST"],
         detail=False,
         permission_classes=[IsAuthenticated]
