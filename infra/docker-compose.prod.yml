@@ -17,9 +17,7 @@ services:
 
   backend:
     container_name: foodgram-backend
-    build:
-      context: ../backend/
-      dockerfile: Dockerfile
+    image: vorchala/foodgram_backend:latest
     env_file: .env
     volumes:
       - static_volume:/app/static/
