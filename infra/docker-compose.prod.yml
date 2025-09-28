@@ -4,11 +4,10 @@ services:
   db:
     container_name: foodgram-db
     image: postgres:13.0
-    env_file: .env.prod
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: foodgram_db
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     restart: unless-stopped
@@ -17,7 +16,7 @@ services:
 
   backend:
     container_name: foodgram-backend
-    image: ${DOCKER_USERNAME}/foodgram_backend:latest
+    image: chacovoy/foodgram_backend:latest
     env_file: .env.prod
     volumes:
       - static_volume:/app/static/
@@ -32,7 +31,7 @@ services:
 
   frontend:
     container_name: foodgram-front
-    image: ${DOCKER_USERNAME}/foodgram_frontend:latest
+    image: chacovoy/foodgram_frontend:latest
     volumes:
       - frontend_build:/app/result_build/
     restart: unless-stopped
