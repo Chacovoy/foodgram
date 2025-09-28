@@ -16,7 +16,7 @@ services:
 
   backend:
     container_name: foodgram-backend
-    image: chacovoy/foodgram_backend:latest
+    image: vorchala/foodgram_backend:latest
     env_file: .env.prod
     volumes:
       - static_volume:/app/static/
@@ -31,7 +31,7 @@ services:
 
   frontend:
     container_name: foodgram-front
-    image: chacovoy/foodgram_frontend:latest
+    image: vorchala/foodgram_frontend:latest
     volumes:
       - frontend_build:/app/result_build/
     restart: unless-stopped
