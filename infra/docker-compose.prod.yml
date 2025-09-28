@@ -4,10 +4,11 @@ services:
   db:
     container_name: foodgram-db
     image: postgres:13.0
+    env_file: .env.prod
     environment:
-      POSTGRES_DB: foodgram_db
-      POSTGRES_USER: foodgram_user
-      POSTGRES_PASSWORD: foodgram_password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     restart: unless-stopped
