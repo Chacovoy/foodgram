@@ -110,6 +110,14 @@ jobs:
           # Ждем запуска базы данных
           sleep 30
           
+          # Принудительно перезагружаем backend для обновления кода
+          echo "🔄 Перезагружаем backend контейнер для применения изменений..."
+          docker-compose -f docker-compose.prod.yml restart backend
+          
+          # Ждем полного запуска backend
+          echo "⏳ Ждем запуска backend..."
+          sleep 10
+          
           # Выполняем миграции и инициализацию
           docker-compose -f docker-compose.prod.yml exec -T backend python manage.py migrate
           docker-compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput
