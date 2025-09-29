@@ -100,12 +100,20 @@ jobs:
           echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
           echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}" >> .env
           
-          # Всегда используем HTTP конфигурацию (SSL настраивается вручную)
-          echo "🌐 Используем HTTP конфигурацию"
-          sed -i 's/nginx.prod.conf/nginx.simple.conf/' docker-compose.prod.yml
+          # Проверяем наличие SSL сертификата и выбираем конфигурацию
+          if [ -f "/etc/letsencrypt/live/foodgrammm.3utilities.com/fullchain.pem" ]; then
+            echo "🔒 SSL сертификат найден - используем HTTPS конфигурацию"
+            sed -i 's/nginx.simple.conf/nginx.prod.conf/' docker-compose.prod.yml
+          else
+            echo "🌐 SSL сертификат не найден - используем HTTP конфигурацию"  
+            sed -i 's/nginx.prod.conf/nginx.simple.conf/' docker-compose.prod.yml
+          fi
           
-          # Обновляем nginx конфигурацию с доменом
+          # Обновляем nginx конфигурацию с доменом в нужном файле
           sed -i 's/your-domain.com/${{ secrets.DOMAIN_NAME }}/g' nginx.simple.conf
+          if [ -f "/etc/letsencrypt/live/foodgrammm.3utilities.com/fullchain.pem" ]; then
+            sed -i 's/your-domain.com/${{ secrets.DOMAIN_NAME }}/g' nginx.prod.conf
+          fi
           
           # Запускаем контейнеры
           docker-compose -f docker-compose.prod.yml pull
