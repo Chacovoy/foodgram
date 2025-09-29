@@ -125,8 +125,23 @@ jobs:
           # Выполняем миграции и инициализацию
           docker-compose -f docker-compose.prod.yml exec -T backend python manage.py migrate
           docker-compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput
-          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py load_ingredients_data
-          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py load_tags_data
+          
+          # Загружаем данные только если их нет
+          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py shell -c "
+          from recipes.models import Tag, Ingredient
+          if not Tag.objects.exists():
+              import subprocess
+              subprocess.run(['python', 'manage.py', 'load_tags_data'])
+              print('Теги загружены')
+          else:
+              print('Теги уже существуют')
+          if not Ingredient.objects.exists():
+              import subprocess  
+              subprocess.run(['python', 'manage.py', 'load_ingredients_data'])
+              print('Ингредиенты загружены')
+          else:
+              print('Ингредиенты уже существуют')
+          "
           
           # Создаем суперпользователя
           docker-compose -f docker-compose.prod.yml exec -T backend python manage.py shell -c "
