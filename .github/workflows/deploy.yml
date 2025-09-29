@@ -74,6 +74,12 @@ jobs:
           # Создаем директории проекта
           PROJECT_DIR="/home/${{ secrets.USERNAME }}/foodgram"
           
+          # Сохраняем SSL сертификаты если есть
+          if [ -d "/etc/letsencrypt" ]; then
+            echo "🔒 Сохраняем SSL сертификаты..."
+            sudo cp -r /etc/letsencrypt /tmp/letsencrypt-backup
+          fi
+          
           # Удаляем старую директорию если есть и создаем новую
           sudo rm -rf $PROJECT_DIR
           mkdir -p $PROJECT_DIR
@@ -81,6 +87,13 @@ jobs:
           
           # Клонируем репозиторий
           git clone https://github.com/${{ github.repository }}.git .
+          
+          # Восстанавливаем SSL сертификаты если были
+          if [ -d "/tmp/letsencrypt-backup" ]; then
+            echo "🔒 Восстанавливаем SSL сертификаты..."
+            sudo cp -r /tmp/letsencrypt-backup/* /etc/letsencrypt/
+            sudo rm -rf /tmp/letsencrypt-backup
+          fi
           
           # Делаем пользователя владельцем директории
           sudo chown -R ${{ secrets.USERNAME }}:${{ secrets.USERNAME }} $PROJECT_DIR
@@ -99,6 +112,15 @@ jobs:
           echo "DB_PORT=5432" >> .env
           echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
           echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}" >> .env
+          
+          # Определяем какую nginx конфигурацию использовать
+          if [ -f "/etc/letsencrypt/live/foodgrammm.3utilities.com/fullchain.pem" ]; then
+            echo "🔒 SSL сертификат найден - используем HTTPS конфигурацию"
+            sed -i 's/nginx.simple.conf/nginx.prod.conf/' docker-compose.prod.yml
+          else
+            echo "🌐 SSL сертификат не найден - используем HTTP конфигурацию"
+            sed -i 's/nginx.prod.conf/nginx.simple.conf/' docker-compose.prod.yml
+          fi
           
           # Обновляем nginx конфигурацию с доменом
           sed -i 's/your-domain.com/${{ secrets.DOMAIN_NAME }}/g' nginx.simple.conf
