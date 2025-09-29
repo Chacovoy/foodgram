@@ -32,7 +32,9 @@ class RecipeFilter(rest_framework.FilterSet):
     tags = rest_framework.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
-        queryset=Tag.objects.all()
+        queryset=Tag.objects.all(),
+        conjoined=False,  # Использовать OR вместо AND для множественных тегов
+        method='filter_tags'
     )
 
     def is_favorited_method(self, queryset, name, value):
@@ -60,6 +62,38 @@ class RecipeFilter(rest_framework.FilterSet):
             return queryset.difference(new_queryset)
 
         return queryset.filter(id__in=recipes)
+
+    def filter_tags(self, queryset, name, value):
+        """
+        Фильтрация по тегам с поддержкой множественных параметров.
+        
+        Поддерживает: ?tags=breakfast&tags=dinner и ?tags=breakfast,dinner
+        """
+        if not value:
+            return queryset
+            
+        tag_slugs = []
+        
+        # Если value - это список (множественные параметры ?tags=a&tags=b)
+        if isinstance(value, list):
+            for item in value:
+                if hasattr(item, 'slug'):  # Это объект Tag
+                    tag_slugs.append(item.slug)
+                else:  # Это строка
+                    tag_slugs.append(str(item))
+        else:
+            # Если value - строка, разделяем по запятым (?tags=a,b)
+            if isinstance(value, str) and ',' in value:
+                tag_slugs = [slug.strip() for slug in value.split(',')]
+            else:
+                # Одиночное значение
+                if hasattr(value, 'slug'):
+                    tag_slugs = [value.slug]
+                else:
+                    tag_slugs = [str(value)]
+        
+        # Фильтруем рецепты, которые имеют любой из указанных тегов
+        return queryset.filter(tags__slug__in=tag_slugs).distinct()
 
     class Meta:
         model = Recipe
