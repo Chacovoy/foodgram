@@ -90,7 +90,7 @@ jobs:
           # Создаем .env файл с секретами
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
           echo "DEBUG=False" >> .env
-          echo "ALLOWED_HOSTS=${{ secrets.DOMAIN_NAME }},www.${{ secrets.DOMAIN_NAME }},localhost,127.0.0.1" >> .env
+          echo "ALLOWED_HOSTS=foodgrammm.3utilities.com,www.foodgrammm.3utilities.com,${{ secrets.DOMAIN_NAME }},www.${{ secrets.DOMAIN_NAME }},localhost,127.0.0.1,51.250.29.108" >> .env
           echo "DB_ENGINE=django.db.backends.postgresql" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
