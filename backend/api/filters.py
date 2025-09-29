@@ -29,11 +29,7 @@ class RecipeFilter(rest_framework.FilterSet):
         field_name='author',
         lookup_expr='exact'
     )
-    tags = rest_framework.ModelMultipleChoiceFilter(
-        field_name='tags__slug',
-        to_field_name='slug',
-        queryset=Tag.objects.all(),
-        conjoined=False,  # Использовать OR вместо AND для множественных тегов
+    tags = rest_framework.CharFilter(
         method='filter_tags'
     )
 
@@ -65,32 +61,18 @@ class RecipeFilter(rest_framework.FilterSet):
 
     def filter_tags(self, queryset, name, value):
         """
-        Фильтрация по тегам с поддержкой множественных параметров.
+        Фильтрация по тегам с поддержкой формата через запятую.
         
-        Поддерживает: ?tags=breakfast&tags=dinner и ?tags=breakfast,dinner
+        Поддерживает: ?tags=breakfast,dinner
         """
         if not value:
             return queryset
-            
-        tag_slugs = []
         
-        # Если value - это список (множественные параметры ?tags=a&tags=b)
-        if isinstance(value, list):
-            for item in value:
-                if hasattr(item, 'slug'):  # Это объект Tag
-                    tag_slugs.append(item.slug)
-                else:  # Это строка
-                    tag_slugs.append(str(item))
-        else:
-            # Если value - строка, разделяем по запятым (?tags=a,b)
-            if isinstance(value, str) and ',' in value:
-                tag_slugs = [slug.strip() for slug in value.split(',')]
-            else:
-                # Одиночное значение
-                if hasattr(value, 'slug'):
-                    tag_slugs = [value.slug]
-                else:
-                    tag_slugs = [str(value)]
+        # Разделяем теги по запятым и убираем пробелы
+        tag_slugs = [slug.strip() for slug in value.split(',') if slug.strip()]
+        
+        if not tag_slugs:
+            return queryset
         
         # Фильтруем рецепты, которые имеют любой из указанных тегов
         return queryset.filter(tags__slug__in=tag_slugs).distinct()
