@@ -1,28 +1,27 @@
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import F, Sum
-from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
+from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import viewsets, status, mixins
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from djoser.serializers import SetPasswordSerializer
 
-from recipes.models import (Tag, Recipe, Favorite,
-                            ShoppingCart, IngredientInRecipe,
-                            Ingredient)
-from users.models import User, Subscription
-from .serializers import (IngredientSerializer, TagSerializer,
-                          RecipeGetSerializer, FavoriteSerializer,
-                          RecipePostSerializer, RecipeShortSerializer,
-                          ShoppingCartSerializer, UserGetSerializer,
-                          UserPostSerializer, SubscriptionSerializer,
-                          UserWithRecipesSerializer)
-from .filters import RecipeFilter, IngredientFilter
-from .permissions import IsAuthorOrAdminOrReadOnly
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
+                            Recipe, ShoppingCart, Tag)
+from users.models import Subscription, User
+from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
+from .permissions import IsAuthorOrAdminOrReadOnly
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeGetSerializer, RecipePostSerializer,
+                          RecipeShortSerializer, ShoppingCartSerializer,
+                          SubscriptionSerializer, TagSerializer,
+                          UserGetSerializer, UserPostSerializer,
+                          UserWithRecipesSerializer)
 from .utils import post_and_delete_action
 
 

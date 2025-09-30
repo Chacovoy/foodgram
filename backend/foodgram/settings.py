@@ -116,19 +116,5 @@ REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'errors',
 }
 
-DJOSER = {
-    'SERIALIZERS': {
-        'user_create': 'api.serializers.UserPostSerializer',
-        'user': 'api.serializers.UserGetSerializer',
-        'current_user': 'api.serializers.UserGetSerializer',
-    },
-
-    'PERMISSIONS': {
-        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
-        'user_list': ['rest_framework.permissions.AllowAny'],
-        'user_create': ['rest_framework.permissions.AllowAny'],
-    },
-    'HIDE_USERS': False,
-}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
