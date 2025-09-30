@@ -14,6 +14,7 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
                             Recipe, ShoppingCart, Tag)
 from users.models import Subscription, User
 from .filters import IngredientFilter, RecipeFilter
+from .helpers import process_base64_avatar
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrAdminOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
@@ -113,24 +114,7 @@ class CustomUserViewSet(
         if request.method == 'PUT':
             if 'avatar' in request.data:
                 avatar_data = request.data['avatar']
-
-                if isinstance(avatar_data, str) and avatar_data.startswith(
-                        'data:image'):
-                    import base64
-                    import uuid
-                    from django.core.files.base import ContentFile
-
-                    format_part, data_part = avatar_data.split(',', 1)
-                    file_extension = format_part.split('/')[1].split(';')[0]
-
-                    file_data = base64.b64decode(data_part)
-
-                    file_name = f"avatar_{uuid.uuid4().hex}.{file_extension}"
-                    avatar_file = ContentFile(file_data, name=file_name)
-
-                    user.avatar = avatar_file
-                else:
-                    user.avatar = avatar_data
+                user.avatar = process_base64_avatar(avatar_data)
 
                 user.save()
                 serializer = UserGetSerializer(user,
@@ -260,24 +244,7 @@ def avatar_upload(request):
 
     if 'avatar' in request.data:
         avatar_data = request.data['avatar']
-
-        if isinstance(avatar_data, str) and avatar_data.startswith(
-                'data:image'):
-            import base64
-            import uuid
-            from django.core.files.base import ContentFile
-
-            format_part, data_part = avatar_data.split(',', 1)
-            file_extension = format_part.split('/')[1].split(';')[0]
-
-            file_data = base64.b64decode(data_part)
-
-            file_name = f"avatar_{uuid.uuid4().hex}.{file_extension}"
-            avatar_file = ContentFile(file_data, name=file_name)
-
-            user.avatar = avatar_file
-        else:
-            user.avatar = avatar_data
+        user.avatar = process_base64_avatar(avatar_data)
 
         user.save()
         serializer = UserGetSerializer(user, context={'request': request})

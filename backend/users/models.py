@@ -1,13 +1,9 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
-
-def check_username(value):
-    if value.lower() == 'me':
-        raise ValidationError('Имя пользователя не может быть таким')
+from .validators import check_username
 
 
 class User(AbstractUser):

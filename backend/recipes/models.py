@@ -1,20 +1,16 @@
-from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
 from users.models import User
+from .validators import (hex_color_validator, min_cooking_time_validator,
+                         min_ingredient_amount_validator, name_validator)
 
 
 class Ingredient(models.Model):
     name = models.CharField(
         'Наименование ингредиента',
         max_length=200,
-        validators=[
-            RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z -]+$',
-                message='Введите корректное имя/название'
-            )
-        ]
+        validators=[name_validator]
     )
     measurement_unit = models.CharField(
         'Единица измерения',
@@ -34,23 +30,13 @@ class Tag(models.Model):
         'Тэг',
         unique=True,
         max_length=200,
-        validators=[
-            RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z -]+$',
-                message='Введите корректное имя/название'
-            )
-        ]
+        validators=[name_validator]
     )
     slug = models.SlugField(unique=True, db_index=True)
     color = models.CharField(
         'Цвет тэга в HEX формате',
         max_length=7,
-        validators=[
-            RegexValidator(
-                regex=r'^#([A-Fa-f0-9]{3,6})$',
-                message='Введите значение цвета в формате HEX! Пример:#FF0000'
-            )
-        ]
+        validators=[hex_color_validator]
     )
 
     class Meta:
@@ -70,12 +56,7 @@ class Recipe(models.Model):
     name = models.CharField(
         'Название рецепта',
         max_length=200,
-        validators=[
-            RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z -]+$',
-                message='Введите корректное имя/название'
-            )
-        ]
+        validators=[name_validator]
     )
     image = models.ImageField(
         'Картинка',
@@ -95,11 +76,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.IntegerField(
         'Время приготовления в минутах',
-        validators=[
-            MinValueValidator(
-                1, 'Время приготовление должно быть не менее минуты'
-            )
-        ]
+        validators=[min_cooking_time_validator]
     )
     pub_date = models.DateTimeField(
         'Дата создания',
@@ -128,11 +105,7 @@ class IngredientInRecipe(models.Model):
     )
     amount = models.IntegerField(
         'Колличество ингредиента в данном рецепте.',
-        validators=[
-            MinValueValidator(
-                1, 'Колличество ингредиента в рецептне не должно быть менее 1.'
-            )
-        ]
+        validators=[min_ingredient_amount_validator]
     )
 
     class Meta:
