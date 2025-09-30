@@ -19,14 +19,22 @@ class Command(BaseCommand):
         print("Загрузка ингредиентов.")
 
         count = 0
+        skipped = 0
         for row in DictReader(
             open('./data/ingredients.csv', encoding='utf-8')
         ):
-            ingredient = Ingredient(
+            # Проверяем, существует ли уже такой ингредиент
+            if not Ingredient.objects.filter(
                 name=row['name'],
                 measurement_unit=row['m_unit']
-            )
-            ingredient.save()
-            count += 1
+            ).exists():
+                ingredient = Ingredient(
+                    name=row['name'],
+                    measurement_unit=row['m_unit']
+                )
+                ingredient.save()
+                count += 1
+            else:
+                skipped += 1
 
-        print(f'Успешно загружено {count} ингредиентов')
+        print(f'Успешно загружено {count} ингредиентов, пропущено дубликатов: {skipped}')

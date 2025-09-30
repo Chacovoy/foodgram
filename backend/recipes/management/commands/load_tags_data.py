@@ -21,13 +21,18 @@ class Command(BaseCommand):
         print("Загрузка тагов.")
 
         count = 0
+        skipped = 0
         for row in DictReader(open('./data/tags.csv', encoding='utf-8')):
-            tag = Tag(
-                name=row['name'],
-                slug=row['slug'],
-                color=row['color'],
-            )
-            tag.save()
-            count += 1
+            # Проверяем, существует ли уже такой тег
+            if not Tag.objects.filter(slug=row['slug']).exists():
+                tag = Tag(
+                    name=row['name'],
+                    slug=row['slug'],
+                    color=row['color'],
+                )
+                tag.save()
+                count += 1
+            else:
+                skipped += 1
 
-        print(f'Успешно загружено {count} тагов')
+        print(f'Успешно загружено {count} тагов, пропущено дубликатов: {skipped}')
