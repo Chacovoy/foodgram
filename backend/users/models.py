@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import UniqueConstraint
+from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 from foodgram.constants import EMAIL_MAX_LENGTH, NAME_MAX_LENGTH
 from .validators import get_user_name_validators
@@ -31,8 +31,8 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ('id',)
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'last_name', 'first_name', ]
@@ -60,5 +60,9 @@ class Subscription(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             UniqueConstraint(fields=['user', 'author'],
-                             name='unique_subscription')
+                             name='unique_subscription'),
+            CheckConstraint(
+                check=Q(user__ne=models.F('author')),
+                name='prevent_self_subscription'
+            )
         ]
