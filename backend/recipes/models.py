@@ -118,53 +118,58 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'Ингридиент в рецепте '
         verbose_name_plural = 'Ингридиенты в рецепте'
+        constraints = [
+            UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
+        ]
 
     def __str__(self):
         return f'{self.ingredient.name} в рецепте {self.recipe.name}'
 
 
-class Favorite(models.Model):
+class BaseUserRecipe(models.Model):
     user = models.ForeignKey(
         User,
-        related_name='FavoriteRecipe',
         on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
         Recipe,
-        related_name='FavoriteRecipe',
         on_delete=models.CASCADE
     )
 
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f'{self.recipe.name} у {self.user.username}'
+
+
+class Favorite(BaseUserRecipe):
     class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
         constraints = [
-            UniqueConstraint(fields=['user', 'recipe'],
-                             name='unique_favorite')
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
         ]
 
     def __str__(self):
-        return f'{self.recipe.name} в списке избанного у {self.user.username}'
+        return f'{self.recipe.name} в списке избранного у {self.user.username}'
 
 
-class ShoppingCart(models.Model):
-    user = models.ForeignKey(
-        User,
-        related_name='RecipeInShoppingList',
-        on_delete=models.CASCADE
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        related_name='shopping_cart',
-        on_delete=models.CASCADE
-    )
-
+class ShoppingCart(BaseUserRecipe):
     class Meta:
         verbose_name = 'Рецепт в списке покупок'
         verbose_name_plural = 'Рецепты в списке покупок'
         constraints = [
-            UniqueConstraint(fields=['user', 'recipe'],
-                             name='unique_shopping_cart')
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart'
+            )
         ]
 
     def __str__(self):
