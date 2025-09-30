@@ -7,10 +7,12 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
                             Recipe, ShoppingCart, Tag)
 from users.models import Subscription, User
 from .fields import Base64ImageField
+from .validators import (get_favorite_unique_validator,
+                         get_shopping_cart_unique_validator,
+                         get_subscription_unique_validator)
 
 
 class UserGetSerializer(UserSerializer):
-    """Сериализатор для просмотра профиля пользователя."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -36,7 +38,6 @@ class UserGetSerializer(UserSerializer):
 
 
 class UserWithRecipesSerializer(UserGetSerializer):
-    """Сериализатор для просмотра пользователя с рецептами."""
 
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
@@ -78,7 +79,6 @@ class UserWithRecipesSerializer(UserGetSerializer):
 
 
 class UserPostSerializer(UserCreateSerializer):
-    """Сериализатор для создания пользователя."""
     class Meta:
         model = User
         fields = (
@@ -99,20 +99,13 @@ class UserPostSerializer(UserCreateSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор для подписок."""
     user = serializers.PrimaryKeyRelatedField(
         read_only=True, default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Subscription
         fields = ('author', 'user', )
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=['author', 'user', ],
-                message="Вы уже подписаны на этого пользователя"
-            )
-        ]
+        validators = [get_subscription_unique_validator()]
 
     def create(self, validated_data):
         return Subscription.objects.create(
@@ -127,14 +120,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Ingredient, где не требуется поле amount."""
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для отображения ингредиентов в рецептах."""
 
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
@@ -155,7 +146,6 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Tag."""
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
@@ -220,7 +210,6 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания рецептов."""
     author = UserGetSerializer(
         read_only=True,
         default=serializers.CurrentUserDefault()
@@ -329,7 +318,6 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для избранных рецептов."""
     user = serializers.PrimaryKeyRelatedField(
         read_only=True, default=serializers.CurrentUserDefault())
     recipe = serializers.PrimaryKeyRelatedField(
@@ -340,13 +328,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('recipe', 'user', )
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=['recipe', 'user', ],
-                message='Этот рецепт уже добавлен в избранное.'
-            )
-        ]
+        validators = [get_favorite_unique_validator()]
 
     def create(self, validated_data):
         return Favorite.objects.create(
@@ -354,7 +336,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализатор для списка покупок."""
     user = serializers.PrimaryKeyRelatedField(
         read_only=True, default=serializers.CurrentUserDefault()
     )
@@ -366,13 +347,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ('recipe', 'user',)
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=ShoppingCart.objects.all(),
-                fields=['recipe', 'user', ],
-                message='Этот рецепт уже добавлен в список покупок.'
-            )
-        ]
+        validators = [get_shopping_cart_unique_validator()]
 
     def create(self, validated_data):
         return ShoppingCart.objects.create(

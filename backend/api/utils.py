@@ -9,12 +9,6 @@ from users.models import User
 def post_and_delete_action(
         self, request, model_1, model_2, serializer, **kwargs
 ):
-    """
-    Действия добавления и удаления:
-    рецепта в список покупок(model_1 == Recipe, model_2 == Shopping_list),
-    рецепта в избранное(model_1 == Recipe, model_2 == Favorite)
-    подписки на пользователей(model_1 == User, model_2 == Subscription)
-    """
     object_1 = get_object_or_404(model_1, id=kwargs['pk'])
     data = request.data.copy()
     if model_1 == Recipe:

@@ -1,19 +1,12 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from foodgram.constants import (EMAIL_MAX_LENGTH, INVALID_NAME_MESSAGE,
-                                NAME_MAX_LENGTH, NAME_REGEX)
-from .validators import check_username
+from foodgram.constants import EMAIL_MAX_LENGTH, NAME_MAX_LENGTH
+from .validators import get_user_name_validators
 
 
 class User(AbstractUser):
-    """Кастомная модель пользователя.
-    Поля email, first_name и last_name обязательны,
-    уникальный идентификатор - email.
-    """
-
     email = models.EmailField(
         'email',
         max_length=EMAIL_MAX_LENGTH,
@@ -22,22 +15,12 @@ class User(AbstractUser):
     first_name = models.CharField(
         'Имя',
         max_length=NAME_MAX_LENGTH,
-        validators=[
-            RegexValidator(
-                regex=NAME_REGEX,
-                message=INVALID_NAME_MESSAGE
-            ), check_username
-        ]
+        validators=get_user_name_validators()
     )
     last_name = models.CharField(
         'Фамилия',
         max_length=NAME_MAX_LENGTH,
-        validators=[
-            RegexValidator(
-                regex=NAME_REGEX,
-                message=INVALID_NAME_MESSAGE
-            ), check_username
-        ]
+        validators=get_user_name_validators()
     )
     password = models.CharField(
         'Пароль',
@@ -64,8 +47,6 @@ class User(AbstractUser):
 
 
 class Subscription(models.Model):
-    """Подписки на авторов."""
-
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

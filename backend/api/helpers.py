@@ -5,7 +5,6 @@ from django.core.files.base import ContentFile
 
 
 def process_base64_avatar(avatar_data):
-    """Обрабатывает аватар в формате base64 и возвращает файл."""
     if isinstance(avatar_data, str) and avatar_data.startswith('data:image'):
         format_part, data_part = avatar_data.split(',', 1)
         file_extension = format_part.split('/')[1].split(';')[0]

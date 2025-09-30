@@ -5,9 +5,6 @@ from .models import Subscription, User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    """ В админке возможность редактировать и удалять
-    все данные о пользователях. Фильтрация по email и username.
-    """
     list_display = (
         'id',
         'username',
@@ -22,5 +19,4 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    """Класс для настройки отображения данных о подписках."""
     list_display = ('user', 'author')
