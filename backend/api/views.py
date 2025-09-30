@@ -10,19 +10,32 @@ from rest_framework.response import Response
 
 from djoser.serializers import SetPasswordSerializer
 
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
-                            Recipe, ShoppingCart, Tag)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Tag,
+)
 from users.models import Subscription
 from .filters import IngredientFilter, RecipeFilter
 from .helpers import process_base64_avatar
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrAdminOrReadOnly
-from .serializers import (FavoriteSerializer, IngredientSerializer,
-                          RecipeGetSerializer, RecipePostSerializer,
-                          RecipeShortSerializer, ShoppingCartSerializer,
-                          SubscriptionSerializer, TagSerializer,
-                          UserGetSerializer, UserPostSerializer,
-                          UserWithRecipesSerializer)
+from .serializers import (
+    FavoriteSerializer,
+    IngredientSerializer,
+    RecipeGetSerializer,
+    RecipePostSerializer,
+    RecipeShortSerializer,
+    ShoppingCartSerializer,
+    SubscriptionSerializer,
+    TagSerializer,
+    UserGetSerializer,
+    UserPostSerializer,
+    UserWithRecipesSerializer,
+)
 from .utils import post_and_delete_action
 
 User = get_user_model()

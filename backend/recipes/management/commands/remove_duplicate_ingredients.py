@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = "Удаление дублирующих ингредиентов из базы данных"
 
     def handle(self, *args, **options):
-        print("Поиск дублирующих ингредиентов...")
+        self.stdout.write("Поиск дублирующих ингредиентов...")
 
         duplicates = (
             Ingredient.objects
@@ -29,16 +29,25 @@ class Command(BaseCommand):
             count_to_remove = len(ingredients_to_remove)
 
             if count_to_remove > 0:
-                print(
+                self.stdout.write(
                     f"Удаляем {count_to_remove} дубликатов для "
-                    f"'{duplicate['name']} ({duplicate['measurement_unit']})'")
+                    f"'{duplicate['name']} ({duplicate['measurement_unit']})'"
+                )
 
                 for ingredient in ingredients_to_remove:
                     ingredient.delete()
 
                 total_removed += count_to_remove
 
-        print(f"Всего удалено дублирующих ингредиентов: {total_removed}")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Всего удалено дублирующих ингредиентов: {total_removed}"
+            )
+        )
 
         unique_count = Ingredient.objects.count()
-        print(f"Осталось уникальных ингредиентов: {unique_count}")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Осталось уникальных ингредиентов: {unique_count}"
+            )
+        )

@@ -4,13 +4,21 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
-                            Recipe, ShoppingCart, Tag)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Tag,
+)
 from users.models import Subscription
 from .fields import Base64ImageField
-from .validators import (get_favorite_unique_validator,
-                         get_shopping_cart_unique_validator,
-                         get_subscription_unique_validator)
+from .validators import (
+    get_favorite_unique_validator,
+    get_shopping_cart_unique_validator,
+    get_subscription_unique_validator,
+)
 
 User = get_user_model()
 
@@ -48,7 +56,7 @@ class UserWithRecipesSerializer(UserGetSerializer):
         model = User
         fields = UserGetSerializer.Meta.fields + (
             'recipes',
-            'recipes_count'
+            'recipes_count',
         )
 
     def validate(self, data):
@@ -106,7 +114,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ('author', 'user', )
+        fields = ('author', 'user')
         validators = [get_subscription_unique_validator()]
 
     def create(self, validated_data):
@@ -175,7 +183,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             'name',
             'image',
             'text',
-            'cooking_time'
+            'cooking_time',
         )
 
     def get_is_favorited(self, obj):
@@ -199,12 +207,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -235,7 +238,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             'name',
             'image',
             'text',
-            'cooking_time'
+            'cooking_time',
         )
 
     @staticmethod

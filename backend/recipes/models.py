@@ -2,12 +2,18 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from foodgram.constants import (INGREDIENT_NAME_MAX_LENGTH,
-                                INGREDIENT_UNIT_MAX_LENGTH,
-                                RECIPE_NAME_MAX_LENGTH, TAG_NAME_MAX_LENGTH,
-                                TAG_SLUG_MAX_LENGTH)
-from .validators import (min_cooking_time_validator,
-                         min_ingredient_amount_validator, name_validator)
+from foodgram.constants import (
+    INGREDIENT_NAME_MAX_LENGTH,
+    INGREDIENT_UNIT_MAX_LENGTH,
+    RECIPE_NAME_MAX_LENGTH,
+    TAG_NAME_MAX_LENGTH,
+    TAG_SLUG_MAX_LENGTH,
+)
+from .validators import (
+    min_cooking_time_validator,
+    min_ingredient_amount_validator,
+    name_validator,
+)
 
 User = get_user_model()
 
@@ -29,8 +35,8 @@ class Ingredient(models.Model):
         constraints = [
             UniqueConstraint(
                 fields=['name', 'measurement_unit'],
-                name='unique_ingredient_name_unit'
-            )
+                name='unique_ingredient_name_unit',
+            ),
         ]
 
     def __str__(self):
@@ -121,8 +127,8 @@ class IngredientInRecipe(models.Model):
         constraints = [
             UniqueConstraint(
                 fields=['recipe', 'ingredient'],
-                name='unique_recipe_ingredient'
-            )
+                name='unique_recipe_ingredient',
+            ),
         ]
 
     def __str__(self):
@@ -153,8 +159,8 @@ class Favorite(BaseUserRecipe):
         constraints = [
             UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_favorite'
-            )
+                name='unique_favorite',
+            ),
         ]
 
     def __str__(self):
@@ -168,8 +174,8 @@ class ShoppingCart(BaseUserRecipe):
         constraints = [
             UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_shopping_cart'
-            )
+                name='unique_shopping_cart',
+            ),
         ]
 
     def __str__(self):

@@ -1,8 +1,13 @@
 from django.core.validators import MinValueValidator, RegexValidator
 
-from foodgram.constants import (INVALID_NAME_MESSAGE, MIN_COOKING_TIME,
-                                MIN_COOKING_TIME_MESSAGE, MIN_INGREDIENT_AMOUNT,
-                                MIN_INGREDIENT_AMOUNT_MESSAGE, NAME_REGEX)
+from foodgram.constants import (
+    INVALID_NAME_MESSAGE,
+    MIN_COOKING_TIME,
+    MIN_COOKING_TIME_MESSAGE,
+    MIN_INGREDIENT_AMOUNT,
+    MIN_INGREDIENT_AMOUNT_MESSAGE,
+    NAME_REGEX,
+)
 
 
 name_validator = RegexValidator(

@@ -16,21 +16,25 @@ class Command(BaseCommand):
     help = "Загрузка данных из tags.csv"
 
     def handle(self, *args, **options):
-
-        print("Загрузка тагов.")
+        self.stdout.write("Загрузка тагов...")
 
         count = 0
         skipped = 0
         for row in DictReader(open('./data/tags.csv', encoding='utf-8')):
-            if not Tag.objects.filter(slug=row['slug']).exists():
-                tag = Tag(
-                    name=row['name'],
-                    slug=row['slug'],
-                )
-                tag.save()
+            tag, created = Tag.objects.get_or_create(
+                slug=row['slug'],
+                defaults={
+                    'name': row['name'],
+                }
+            )
+            if created:
                 count += 1
             else:
                 skipped += 1
 
-        print(f'Успешно загружено {count} тагов, '
-              f'пропущено дубликатов: {skipped}')
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Успешно загружено {count} тагов, '
+                f'пропущено дубликатов: {skipped}'
+            )
+        )

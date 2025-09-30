@@ -59,10 +59,12 @@ class Subscription(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
-            UniqueConstraint(fields=['user', 'author'],
-                             name='unique_subscription'),
+            UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_subscription',
+            ),
             CheckConstraint(
                 check=Q(user__ne=models.F('author')),
-                name='prevent_self_subscription'
-            )
+                name='prevent_self_subscription',
+            ),
         ]
