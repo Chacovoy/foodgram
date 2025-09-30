@@ -2,12 +2,11 @@ from distutils.util import strtobool
 
 from django_filters import rest_framework
 
-from recipes.models import Ingredient, Recipe, Tag, Favorite, ShoppingCart
+from recipes.models import Ingredient, Recipe, Favorite, ShoppingCart
 from .constants import CHOICES_LIST
 
 
 class IngredientFilter(rest_framework.FilterSet):
-    """Фильтр для ингредиентов."""
     name = rest_framework.CharFilter(lookup_expr='startswith')
 
     class Meta:
@@ -16,7 +15,6 @@ class IngredientFilter(rest_framework.FilterSet):
 
 
 class RecipeFilter(rest_framework.FilterSet):
-    """Фильтр для рецептов: по избранному, списку покупок, автору и тагам."""
     is_favorited = rest_framework.ChoiceFilter(
         choices=CHOICES_LIST,
         method='is_favorited_method'
@@ -60,21 +58,15 @@ class RecipeFilter(rest_framework.FilterSet):
         return queryset.filter(id__in=recipes)
 
     def filter_tags(self, queryset, name, value):
-        """
-        Фильтрация по тегам с поддержкой формата через запятую.
-        
-        Поддерживает: ?tags=breakfast,dinner
-        """
         if not value:
             return queryset
-        
-        # Разделяем теги по запятым и убираем пробелы
-        tag_slugs = [slug.strip() for slug in value.split(',') if slug.strip()]
-        
+
+        tag_slugs = [slug.strip() for slug in value.split(',')
+                     if slug.strip()]
+
         if not tag_slugs:
             return queryset
-        
-        # Фильтруем рецепты, которые имеют любой из указанных тегов
+
         return queryset.filter(tags__slug__in=tag_slugs).distinct()
 
     class Meta:

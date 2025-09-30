@@ -13,7 +13,6 @@ database with tables"""
 
 
 class Command(BaseCommand):
-    # Show this when the user types help
     help = "Загрузка данных из tags.csv"
 
     def handle(self, *args, **options):
@@ -23,7 +22,6 @@ class Command(BaseCommand):
         count = 0
         skipped = 0
         for row in DictReader(open('./data/tags.csv', encoding='utf-8')):
-            # Проверяем, существует ли уже такой тег
             if not Tag.objects.filter(slug=row['slug']).exists():
                 tag = Tag(
                     name=row['name'],
@@ -35,4 +33,5 @@ class Command(BaseCommand):
             else:
                 skipped += 1
 
-        print(f'Успешно загружено {count} тагов, пропущено дубликатов: {skipped}')
+        print(f'Успешно загружено {count} тагов, '
+              f'пропущено дубликатов: {skipped}')

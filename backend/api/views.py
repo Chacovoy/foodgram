@@ -39,185 +39,147 @@ class CustomUserViewSet(
         return self.request.user
 
     def get_serializer_class(self):
-
         if self.action in ['subscriptions', 'subscribe']:
-
             return UserWithRecipesSerializer
-
         elif self.request.method == 'GET':
-
             return UserGetSerializer
-
-        elif self.request.method == 'POST':
-
-            return UserPostSerializer
-
-    def get_permissions(self):
-        if self.action == 'retrieve':
-            self.permission_classes = [IsAuthenticated, ]
-
-        return super(self.__class__, self).get_permissions()
+        return UserPostSerializer
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated],
+        permission_classes=[IsAuthenticated, ]
     )
-    def me(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
-
-        return self.retrieve(request, *args, **kwargs)
+    def me(self, request):
+        if request.method == 'GET':
+            instance = self.get_instance()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
 
     @action(
-        ["POST"],
         detail=False,
-        permission_classes=[IsAuthenticated]
+        methods=['POST'],
+        permission_classes=[IsAuthenticated, ]
     )
-    def set_password(self, request, *args, **kwargs):
-        serializer = SetPasswordSerializer(
-            data=request.data, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
+    def set_password(self, request):
+        serializer = SetPasswordSerializer(data=request.data,
+                                           context={'request': request})
+        if serializer.is_valid():
+            self.request.user.set_password(serializer.data['new_password'])
+            self.request.user.save()
+            update_session_auth_hash(request, self.request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-        self.request.user.set_password(serializer.data['new_password'])
-        self.request.user.save()
-
-        update_session_auth_hash(self.request, self.request.user)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated, ]
     )
     def subscriptions(self, request):
-        users = User.objects.filter(
-            following__user=request.user
-        ).prefetch_related('recipes')
-        page = self.paginate_queryset(users)
-
+        user = request.user
+        subscriptions = User.objects.filter(following__user=user)
+        page = self.paginate_queryset(subscriptions)
         if page is not None:
-            serializer = UserWithRecipesSerializer(
-                page, many=True,
-                context={'request': request})
-
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-
-        serializer = UserWithRecipesSerializer(
-            users, many=True, context={'request': request}
-        )
-
+        serializer = self.get_serializer(subscriptions, many=True)
         return Response(serializer.data)
 
     @action(
-        ["POST", "DELETE"],
         detail=True,
-        permission_classes=[IsAuthorOrAdminOrReadOnly],
+        methods=['POST', 'DELETE'],
+        permission_classes=[IsAuthenticated, ]
     )
     def subscribe(self, request, **kwargs):
         return post_and_delete_action(
-            self, request, User, Subscription, SubscriptionSerializer, **kwargs
+            self,
+            request,
+            User,
+            Subscription,
+            SubscriptionSerializer,
+            **kwargs
         )
 
     @action(
-        ["PUT", "DELETE"],
         detail=False,
+        methods=['PUT', 'DELETE'],
         permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
+        url_name='me_avatar'
     )
-    def avatar(self, request, *args, **kwargs):
+    def avatar(self, request):
+        user = request.user
+
         if request.method == 'PUT':
-            # Обновление аватара
-            user = request.user
+            if 'avatar' in request.data:
+                avatar_data = request.data['avatar']
+
+                if isinstance(avatar_data, str) and avatar_data.startswith(
+                        'data:image'):
+                    import base64
+                    import uuid
+                    from django.core.files.base import ContentFile
+
+                    format_part, data_part = avatar_data.split(',', 1)
+                    file_extension = format_part.split('/')[1].split(';')[0]
+
+                    file_data = base64.b64decode(data_part)
+
+                    file_name = f"avatar_{uuid.uuid4().hex}.{file_extension}"
+                    avatar_file = ContentFile(file_data, name=file_name)
+
+                    user.avatar = avatar_file
+                else:
+                    user.avatar = avatar_data
+
+                user.save()
+                serializer = UserGetSerializer(user,
+                                               context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            return Response(
+                {'avatar': ['Это поле обязательно.']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        elif request.method == 'DELETE':
             if 'avatar' in request.data:
                 user.avatar = request.data['avatar']
                 user.save()
-                serializer = UserGetSerializer(user, context={'request': request})
+                serializer = UserGetSerializer(user,
+                                               context={'request': request})
                 return Response(serializer.data)
             return Response(
                 {'error': 'Аватар не предоставлен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         elif request.method == 'DELETE':
-            # Удаление аватара
-            user = request.user
-            user.avatar = None
-            user.save()
-            serializer = UserGetSerializer(user, context={'request': request})
-            return Response(serializer.data)
-
-    @action(
-        ["POST"],
-        detail=False,
-        permission_classes=[],
-    )
-    def reset_password(self, request, *args, **kwargs):
-        # Простая реализация сброса пароля
-        email = request.data.get('email')
-        if not email:
+            if user.avatar:
+                user.avatar.delete(save=False)
+                user.avatar = None
+                user.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {'error': 'Email не предоставлен'}, 
+                {'error': 'Аватар не установлен'},
                 status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            User.objects.get(email=email)
-            # В реальном проекте здесь должна быть отправка email
-            return Response(
-                {'message': 'Инструкции по сбросу пароля отправлены на email'},
-                status=status.HTTP_200_OK
-            )
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'Пользователь с таким email не найден'},
-                status=status.HTTP_404_NOT_FOUND
             )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """Эндпоинт  api/ingredients/.
-    GET запрос: Получение списка всех ингредиентов с
-    возможностью поиска по name.
-    Эндпоинт  api/ingredients/id.
-    GET запрос: получение ингредиента по id
-    Права доступа: Доступно без токена.
-    """
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     pagination_class = None
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """Эндпоинт  api/tags/.
-    GET запрос: Получение списка всех тэгов
-    Эндпоинт  api/tags/id.
-    GET запрос: получение тэгов по id
-    Права доступа: Доступно без токена.
-    """
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """Эндпоинт  api/recipes/.
-    GET запрос: Получение списка всех рецептов.
-    Страница доступна всем пользователям. Пагинация.
-    Доступна фильтрация по избранному, автору, списку покупок и тегам.
-
-    POST запрос: Создать рецепт. Доступно только авторизованному пользователю.
-
-    Эндпоинт  api/recipes/id.
-    GET запрос: получение рецепта по id. Доступно только авторизованным.
-    PATCH и DELETE запрос доступно только автору рецепта.
-
-    Эндпоинт  api/recipes/favorite.
-    POST и DEL запрос: создание и удаление подписки.
-    Доступно только авторизованному.
-
-    Эндпоинт api/recipes/download_shopping_cart
-    GET запрос: скачать список покупок.
-    """
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthorOrAdminOrReadOnly, ]
     filter_backends = (DjangoFilterBackend, )
@@ -240,7 +202,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             Recipe,
             Favorite,
             FavoriteSerializer,
-            **kwargs
+
         )
 
     @action(["POST", "DELETE"], detail=True)
@@ -286,7 +248,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='get-link'
     )
     def get_link(self, request, **kwargs):
-        """Получение ссылки на рецепт."""
         recipe = self.get_object()
         link = (f"{request.scheme}://{request.get_host()}"
                 f"/recipes/{recipe.id}/")
@@ -296,40 +257,34 @@ class RecipeViewSet(viewsets.ModelViewSet):
 @api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def avatar_upload(request):
-    """Загрузка аватарки пользователя."""
     user = request.user
-    
-    # Обработка base64 данных из фронтенда
+
     if 'avatar' in request.data:
         avatar_data = request.data['avatar']
-        
-        # Если это base64 строка
-        if isinstance(avatar_data, str) and avatar_data.startswith('data:image'):
+
+        if isinstance(avatar_data, str) and avatar_data.startswith(
+                'data:image'):
             import base64
             import uuid
             from django.core.files.base import ContentFile
-            
-            # Извлекаем формат и данные
+
             format_part, data_part = avatar_data.split(',', 1)
             file_extension = format_part.split('/')[1].split(';')[0]
-            
-            # Декодируем base64
+
             file_data = base64.b64decode(data_part)
-            
-            # Создаем файл
+
             file_name = f"avatar_{uuid.uuid4().hex}.{file_extension}"
             avatar_file = ContentFile(file_data, name=file_name)
-            
+
             user.avatar = avatar_file
         else:
-            # Обычный файл (для совместимости с multipart/form-data)
             user.avatar = avatar_data
-            
+
         user.save()
         serializer = UserGetSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     return Response(
-        {'avatar': ['Это поле обязательно.']}, 
+        {'avatar': ['Это поле обязательно.']},
         status=status.HTTP_400_BAD_REQUEST
     )

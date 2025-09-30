@@ -23,7 +23,6 @@ class Command(BaseCommand):
         for row in DictReader(
             open('./data/ingredients.csv', encoding='utf-8')
         ):
-            # Проверяем, существует ли уже такой ингредиент
             if not Ingredient.objects.filter(
                 name=row['name'],
                 measurement_unit=row['m_unit']
@@ -37,4 +36,5 @@ class Command(BaseCommand):
             else:
                 skipped += 1
 
-        print(f'Успешно загружено {count} ингредиентов, пропущено дубликатов: {skipped}')
+        print(f'Успешно загружено {count} ингредиентов, '
+              f'пропущено дубликатов: {skipped}')
