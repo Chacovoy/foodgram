@@ -12,13 +12,6 @@ class User(AbstractUser):
     уникальный идентификатор - email.
     """
 
-    USER = 'user'
-    ADMIN = 'admin'
-    ROLE_CHOICES = [
-        (USER, 'user'),
-        (ADMIN, 'admin'),
-    ]
-
     email = models.EmailField(
         'email',
         max_length=254,
@@ -52,14 +45,6 @@ class User(AbstractUser):
         max_length=150,
     )
 
-    role = models.CharField(
-        'Роль пользователя',
-        max_length=5,
-        choices=ROLE_CHOICES,
-        default=USER,
-        blank=True,
-    )
-
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/avatars/',
@@ -69,14 +54,6 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'last_name', 'first_name', ]
-
-    @property
-    def is_guest(self):
-        return self.role == self.USER
-
-    @property
-    def is_admin(self):
-        return self.role == self.ADMIN or self.is_superuser
 
     class Meta:
         ordering = ('id',)
