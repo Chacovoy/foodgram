@@ -38,7 +38,6 @@ class UserGetSerializer(UserSerializer):
 
 
 class UserWithRecipesSerializer(UserGetSerializer):
-
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
 
@@ -126,7 +125,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
-
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient.id'
@@ -152,9 +150,6 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
-    '''Сериализатор для модели Recipe.
- Для GET запросов к эндпоинтам /recipe/ и /recipe/id/.
-    '''
     tags = TagSerializer(many=True, read_only=True)
     author = UserGetSerializer()
     ingredients = IngredientInRecipeSerializer(

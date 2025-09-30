@@ -22,11 +22,6 @@ class User(AbstractUser):
         max_length=NAME_MAX_LENGTH,
         validators=get_user_name_validators()
     )
-    password = models.CharField(
-        'Пароль',
-        max_length=NAME_MAX_LENGTH,
-    )
-
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/avatars/',
@@ -34,13 +29,13 @@ class User(AbstractUser):
         null=True,
     )
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'last_name', 'first_name', ]
-
     class Meta:
         ordering = ('id',)
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'last_name', 'first_name', ]
 
     def __str__(self):
         return self.username
