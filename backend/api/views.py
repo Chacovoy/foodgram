@@ -289,7 +289,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Получение ссылки на рецепт."""
         recipe = self.get_object()
         link = (f"{request.scheme}://{request.get_host()}"
-                f"/api/recipes/{recipe.id}/")
+                f"/recipes/{recipe.id}/")
         return Response({'short-link': link})
 
 
