@@ -185,7 +185,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             Recipe,
             Favorite,
             FavoriteSerializer,
-
+            **kwargs
         )
 
     @action(["POST", "DELETE"], detail=True)
