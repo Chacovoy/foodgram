@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers, status
@@ -5,11 +6,13 @@ from rest_framework.exceptions import ValidationError
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
                             Recipe, ShoppingCart, Tag)
-from users.models import Subscription, User
+from users.models import Subscription
 from .fields import Base64ImageField
 from .validators import (get_favorite_unique_validator,
                          get_shopping_cart_unique_validator,
                          get_subscription_unique_validator)
+
+User = get_user_model()
 
 
 class UserGetSerializer(UserSerializer):
@@ -146,7 +149,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'color', 'slug')
+        fields = ('id', 'name', 'slug')
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):

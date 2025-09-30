@@ -26,7 +26,6 @@ class Command(BaseCommand):
                 tag = Tag(
                     name=row['name'],
                     slug=row['slug'],
-                    color=row['color'],
                 )
                 tag.save()
                 count += 1

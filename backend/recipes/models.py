@@ -1,17 +1,21 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from foodgram.constants import (HEX_COLOR_MAX_LENGTH, INGREDIENT_UNIT_MAX_LENGTH,
-                                RECIPE_NAME_MAX_LENGTH, TAG_NAME_MAX_LENGTH)
-from users.models import User
-from .validators import (hex_color_validator, min_cooking_time_validator,
+from foodgram.constants import (INGREDIENT_NAME_MAX_LENGTH,
+                                INGREDIENT_UNIT_MAX_LENGTH,
+                                RECIPE_NAME_MAX_LENGTH, TAG_NAME_MAX_LENGTH,
+                                TAG_SLUG_MAX_LENGTH)
+from .validators import (min_cooking_time_validator,
                          min_ingredient_amount_validator, name_validator)
+
+User = get_user_model()
 
 
 class Ingredient(models.Model):
     name = models.CharField(
         'Наименование ингредиента',
-        max_length=RECIPE_NAME_MAX_LENGTH,
+        max_length=INGREDIENT_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
     measurement_unit = models.CharField(
@@ -22,6 +26,12 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        constraints = [
+            UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient_name_unit'
+            )
+        ]
 
     def __str__(self):
         return f'{self.name} в {self.measurement_unit}'
@@ -34,12 +44,7 @@ class Tag(models.Model):
         max_length=TAG_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
-    slug = models.SlugField(unique=True)
-    color = models.CharField(
-        'Цвет тэга в HEX формате',
-        max_length=HEX_COLOR_MAX_LENGTH,
-        validators=[hex_color_validator]
-    )
+    slug = models.SlugField(unique=True, max_length=TAG_SLUG_MAX_LENGTH)
 
     class Meta:
         verbose_name = 'Тэг'

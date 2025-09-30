@@ -22,7 +22,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'slug', 'color',)
+    list_display = ('pk', 'name', 'slug',)
 
 
 @admin.register(Ingredient)

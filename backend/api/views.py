@@ -1,4 +1,4 @@
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.db.models import F, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,7 +12,7 @@ from djoser.serializers import SetPasswordSerializer
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
                             Recipe, ShoppingCart, Tag)
-from users.models import Subscription, User
+from users.models import Subscription
 from .filters import IngredientFilter, RecipeFilter
 from .helpers import process_base64_avatar
 from .pagination import CustomPagination
@@ -24,6 +24,8 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           UserGetSerializer, UserPostSerializer,
                           UserWithRecipesSerializer)
 from .utils import post_and_delete_action
+
+User = get_user_model()
 
 
 class CustomUserViewSet(
