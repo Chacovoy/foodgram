@@ -6,7 +6,6 @@ from users.models import User
 
 
 class Ingredient(models.Model):
-    '''Ингредиенты для составления рецептов с указанием единиц измерения.'''
     name = models.CharField(
         'Наименование ингредиента',
         max_length=200,
@@ -31,7 +30,6 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    '''Тэги.'''
     name = models.CharField(
         'Тэг',
         unique=True,
@@ -64,7 +62,6 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    '''Рецепт.'''
     author = models.ForeignKey(
         User,
         related_name='recipes',
@@ -119,7 +116,6 @@ class Recipe(models.Model):
 
 
 class IngredientInRecipe(models.Model):
-    '''Модель для связи рецепта и ингредиентов.'''
     recipe = models.ForeignKey(
         Recipe,
         related_name='IngredientsInRecipe',
@@ -148,7 +144,6 @@ class IngredientInRecipe(models.Model):
 
 
 class Favorite(models.Model):
-    '''Избранные рецепты.'''
     user = models.ForeignKey(
         User,
         related_name='FavoriteRecipe',
@@ -173,7 +168,6 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
-    '''Рецепты, добавленные в список покупок.'''
     user = models.ForeignKey(
         User,
         related_name='RecipeInShoppingList',
