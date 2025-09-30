@@ -3,6 +3,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
+from foodgram.constants import (EMAIL_MAX_LENGTH, INVALID_NAME_MESSAGE,
+                                NAME_MAX_LENGTH, NAME_REGEX)
 from .validators import check_username
 
 
@@ -14,35 +16,35 @@ class User(AbstractUser):
 
     email = models.EmailField(
         'email',
-        max_length=254,
+        max_length=EMAIL_MAX_LENGTH,
         blank=False,
         unique=True
     )
     first_name = models.CharField(
         'Имя',
-        max_length=150,
+        max_length=NAME_MAX_LENGTH,
         blank=False,
         validators=[
             RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z -]+$',
-                message='Введите корректное имя/название'
+                regex=NAME_REGEX,
+                message=INVALID_NAME_MESSAGE
             ), check_username
         ]
     )
     last_name = models.CharField(
         'Фамилия',
-        max_length=150,
+        max_length=NAME_MAX_LENGTH,
         blank=False,
         validators=[
             RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z -]+$',
-                message='Введите корректное имя/название'
+                regex=NAME_REGEX,
+                message=INVALID_NAME_MESSAGE
             ), check_username
         ]
     )
     password = models.CharField(
         'Пароль',
-        max_length=150,
+        max_length=NAME_MAX_LENGTH,
     )
 
     avatar = models.ImageField(

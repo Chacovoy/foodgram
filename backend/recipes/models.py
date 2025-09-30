@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import UniqueConstraint
 
+from foodgram.constants import (HEX_COLOR_MAX_LENGTH, INGREDIENT_UNIT_MAX_LENGTH,
+                                RECIPE_NAME_MAX_LENGTH, TAG_NAME_MAX_LENGTH)
 from users.models import User
 from .validators import (hex_color_validator, min_cooking_time_validator,
                          min_ingredient_amount_validator, name_validator)
@@ -9,12 +11,12 @@ from .validators import (hex_color_validator, min_cooking_time_validator,
 class Ingredient(models.Model):
     name = models.CharField(
         'Наименование ингредиента',
-        max_length=200,
+        max_length=RECIPE_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
     measurement_unit = models.CharField(
         'Единица измерения',
-        max_length=100
+        max_length=INGREDIENT_UNIT_MAX_LENGTH
     )
 
     class Meta:
@@ -29,13 +31,13 @@ class Tag(models.Model):
     name = models.CharField(
         'Тэг',
         unique=True,
-        max_length=200,
+        max_length=TAG_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
     slug = models.SlugField(unique=True, db_index=True)
     color = models.CharField(
         'Цвет тэга в HEX формате',
-        max_length=7,
+        max_length=HEX_COLOR_MAX_LENGTH,
         validators=[hex_color_validator]
     )
 
@@ -55,7 +57,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         'Название рецепта',
-        max_length=200,
+        max_length=RECIPE_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
     image = models.ImageField(
