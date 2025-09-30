@@ -34,7 +34,7 @@ class Tag(models.Model):
         max_length=TAG_NAME_MAX_LENGTH,
         validators=[name_validator]
     )
-    slug = models.SlugField(unique=True, db_index=True)
+    slug = models.SlugField(unique=True)
     color = models.CharField(
         'Цвет тэга в HEX формате',
         max_length=HEX_COLOR_MAX_LENGTH,
@@ -146,7 +146,7 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
         related_name='RecipeInShoppingList',
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
         Recipe,

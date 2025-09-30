@@ -17,13 +17,11 @@ class User(AbstractUser):
     email = models.EmailField(
         'email',
         max_length=EMAIL_MAX_LENGTH,
-        blank=False,
         unique=True
     )
     first_name = models.CharField(
         'Имя',
         max_length=NAME_MAX_LENGTH,
-        blank=False,
         validators=[
             RegexValidator(
                 regex=NAME_REGEX,
@@ -34,7 +32,6 @@ class User(AbstractUser):
     last_name = models.CharField(
         'Фамилия',
         max_length=NAME_MAX_LENGTH,
-        blank=False,
         validators=[
             RegexValidator(
                 regex=NAME_REGEX,
@@ -73,13 +70,13 @@ class Subscription(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='follower',
-        verbose_name='Подписчик',
+        verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='following',
-        verbose_name='Автор, на которого подписываются',
+        verbose_name='Автор, на которого подписываются'
     )
 
     class Meta:
