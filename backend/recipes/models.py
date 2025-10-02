@@ -180,3 +180,29 @@ class ShoppingCart(BaseUserRecipe):
 
     def __str__(self):
         return f'{self.recipe.name} в списке покупок у {self.user.username}'
+
+
+class ShortLink(models.Model):
+    recipe = models.OneToOneField(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='short_link',
+        verbose_name='Рецепт'
+    )
+    short_code = models.CharField(
+        'Короткий код',
+        max_length=10,
+        unique=True,
+        db_index=True
+    )
+    created_at = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = 'Короткая ссылка'
+        verbose_name_plural = 'Короткие ссылки'
+
+    def __str__(self):
+        return f'{self.short_code} -> {self.recipe.name}'

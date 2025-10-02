@@ -1,3 +1,5 @@
+import secrets
+
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.db.models import F, Sum
 from django.http import HttpResponse
@@ -16,6 +18,7 @@ from recipes.models import (
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
+    ShortLink,
     Tag,
 )
 from users.models import Subscription
@@ -247,8 +250,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_link(self, request, **kwargs):
         recipe = self.get_object()
+
+        short_link, created = ShortLink.objects.get_or_create(
+            recipe=recipe,
+            defaults={'short_code': secrets.token_urlsafe(6)}
+        )
+
         link = (f"{request.scheme}://{request.get_host()}"
-                f"/recipes/{recipe.id}/")
+                f"/s/{short_link.short_code}/")
         return Response({'short-link': link})
 
 

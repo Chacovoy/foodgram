@@ -6,6 +6,7 @@ from .models import (
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
+    ShortLink,
     Tag,
 )
 
@@ -47,3 +48,10 @@ class FavoriteAdmin(admin.ModelAdmin):
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe')
+
+
+@admin.register(ShortLink)
+class ShortLinkAdmin(admin.ModelAdmin):
+    list_display = ('short_code', 'recipe', 'created_at')
+    readonly_fields = ('short_code', 'created_at')
+    search_fields = ('short_code', 'recipe__name')
