@@ -7,7 +7,7 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import users.models
+import users.validators
 
 
 class Migration(migrations.Migration):
@@ -30,8 +30,8 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
                 ('email', models.EmailField(max_length=254, unique=True, verbose_name='email')),
-                ('first_name', models.CharField(max_length=150, validators=[django.core.validators.RegexValidator(message='Введите корректное имя/название', regex='^[а-яА-ЯёЁa-zA-Z -]+$'), users.models.check_username], verbose_name='Имя')),
-                ('last_name', models.CharField(max_length=150, validators=[django.core.validators.RegexValidator(message='Введите корректное имя/название', regex='^[а-яА-ЯёЁa-zA-Z -]+$'), users.models.check_username], verbose_name='Фамилия')),
+                ('first_name', models.CharField(max_length=150, validators=[django.core.validators.RegexValidator(message='Введите корректное имя/название', regex='^[а-яА-ЯёЁa-zA-Z -]+$'), users.validators.check_username], verbose_name='Имя')),
+                ('last_name', models.CharField(max_length=150, validators=[django.core.validators.RegexValidator(message='Введите корректное имя/название', regex='^[а-яА-ЯёЁa-zA-Z -]+$'), users.validators.check_username], verbose_name='Фамилия')),
                 ('password', models.CharField(max_length=150, verbose_name='Пароль')),
                 ('role', models.CharField(blank=True, choices=[('user', 'user'), ('admin', 'admin')], default='user', max_length=5, verbose_name='Роль пользователя')),
                 ('avatar', models.ImageField(blank=True, null=True, upload_to='users/avatars/', verbose_name='Аватар')),
