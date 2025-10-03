@@ -2,11 +2,21 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
 
-from foodgram.constants import EMAIL_MAX_LENGTH, NAME_MAX_LENGTH
-from .validators import get_user_name_validators
+from foodgram.constants import (
+    EMAIL_MAX_LENGTH,
+    NAME_MAX_LENGTH,
+    USERNAME_MAX_LENGTH,
+)
+from .validators import get_user_name_validators, get_username_validators
 
 
 class User(AbstractUser):
+    username = models.CharField(
+        'Имя пользователя',
+        max_length=USERNAME_MAX_LENGTH,
+        unique=True,
+        validators=get_username_validators()
+    )
     email = models.EmailField(
         'email',
         max_length=EMAIL_MAX_LENGTH,

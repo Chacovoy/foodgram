@@ -1,9 +1,17 @@
-from distutils.util import strtobool
-
 from django_filters import rest_framework
 
 from recipes.models import Ingredient, Recipe, Favorite, ShoppingCart
 from .constants import CHOICES_LIST
+
+
+def strtobool(val):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        raise ValueError(f"invalid truth value {val}")
 
 
 class IngredientFilter(rest_framework.FilterSet):

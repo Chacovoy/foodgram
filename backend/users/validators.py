@@ -13,7 +13,6 @@ def check_username(value):
         raise ValidationError(INVALID_USERNAME_MESSAGE)
 
 
-# Комбинированный валидатор для имен пользователей (имя/фамилия)
 user_name_validator = RegexValidator(
     regex=NAME_REGEX,
     message=INVALID_NAME_MESSAGE
@@ -22,3 +21,7 @@ user_name_validator = RegexValidator(
 
 def get_user_name_validators():
     return [user_name_validator, check_username]
+
+
+def get_username_validators():
+    return [check_username]
