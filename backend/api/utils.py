@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -8,51 +9,49 @@ from recipes.models import Recipe
 User = get_user_model()
 
 
-def post_and_delete_action(
-        self, request, model_1, model_2, serializer, **kwargs
+def create_related_object(
+        self, request, model, related_model, serializer_class, **kwargs
 ):
-    object_1 = get_object_or_404(model_1, id=kwargs['pk'])
+    obj = get_object_or_404(model, id=kwargs['pk'])
     data = request.data.copy()
-    if model_1 == Recipe:
-        data.update({'recipe': object_1.id})
-    elif model_1 == User:
-        data.update(
-            {'author': object_1.id}
-        )
-    serializer = serializer(
-        data=data, context={'request': request}
+
+    if model == Recipe:
+        data.update({'recipe': obj.id})
+    elif model == User:
+        data.update({'author': obj.id})
+
+    serializer = serializer_class(data=data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    return Response(
+        status=status.HTTP_201_CREATED,
+        data=self.get_serializer(obj).data
     )
 
-    if request.method == "POST":
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
 
+def delete_related_object(request, model, related_model, **kwargs):
+    obj = get_object_or_404(model, id=kwargs['pk'])
+
+    if model == Recipe:
+        related_obj = related_model.objects.filter(
+            recipe=obj,
+            user=request.user
+        )
+        error_message = 'В списке покупок(в избранном) нет этого рецепта.'
+    elif model == User:
+        related_obj = related_model.objects.filter(
+            author=obj,
+            user=request.user
+        )
+        error_message = 'Вы не подписаны на этого пользователя'
+
+    deleted_count, _ = related_obj.delete()
+
+    if deleted_count == 0:
         return Response(
-            status=status.HTTP_201_CREATED,
-            data=self.get_serializer(object_1).data
+            {'errors': error_message},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    elif request.method == "DELETE" and model_1 == Recipe:
-        object = model_2.objects.filter(
-            recipe=object_1, user=request.user
-        )
-        if not object.exists():
-            return Response(
-                {'errors': 'В списке покупок(в избранном) нет этого рецепта.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        object.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    elif request.method == "DELETE" and model_1 == User:
-        object = model_2.objects.filter(
-            author=object_1, user=request.user
-        )
-        if not object.exists():
-            return Response(
-                {'errors': 'Вы не подписаны на этого пользователя'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        object.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_204_NO_CONTENT)

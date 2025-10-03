@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
 from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -39,12 +39,12 @@ from .serializers import (
     UserPostSerializer,
     UserWithRecipesSerializer,
 )
-from .utils import post_and_delete_action
+from .utils import create_related_object, delete_related_object
 
 User = get_user_model()
 
 
-class CustomUserViewSet(
+class UserViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -65,13 +65,13 @@ class CustomUserViewSet(
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated, ]
+        methods=['GET'],
+        permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        if request.method == 'GET':
-            instance = self.get_instance()
-            serializer = self.get_serializer(instance)
-            return Response(serializer.data)
+        instance = self.get_instance()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     @action(
         detail=False,
@@ -92,7 +92,8 @@ class CustomUserViewSet(
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated, ]
+        methods=['GET'],
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
         user = request.user
@@ -106,11 +107,11 @@ class CustomUserViewSet(
 
     @action(
         detail=True,
-        methods=['POST', 'DELETE'],
-        permission_classes=[IsAuthenticated, ]
+        methods=['POST'],
+        permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, **kwargs):
-        return post_and_delete_action(
+        return create_related_object(
             self,
             request,
             User,
@@ -119,51 +120,50 @@ class CustomUserViewSet(
             **kwargs
         )
 
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, **kwargs):
+        return delete_related_object(
+            request,
+            User,
+            Subscription,
+            **kwargs
+        )
+
     @action(
         detail=False,
-        methods=['PUT', 'DELETE'],
+        methods=['PUT'],
         permission_classes=[IsAuthenticated],
-        url_path='me/avatar',
-        url_name='me_avatar'
+        url_path='me/avatar'
     )
     def avatar(self, request):
         user = request.user
 
-        if request.method == 'PUT':
-            if 'avatar' in request.data:
-                avatar_data = request.data['avatar']
-                user.avatar = process_base64_avatar(avatar_data)
-
-                user.save()
-                serializer = UserGetSerializer(user,
-                                               context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
+        if 'avatar' not in request.data:
             return Response(
                 {'avatar': ['Это поле обязательно.']},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        elif request.method == 'DELETE':
-            if 'avatar' in request.data:
-                user.avatar = request.data['avatar']
-                user.save()
-                serializer = UserGetSerializer(user,
-                                               context={'request': request})
-                return Response(serializer.data)
-            return Response(
-                {'error': 'Аватар не предоставлен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        elif request.method == 'DELETE':
-            if user.avatar:
-                user.avatar.delete(save=False)
-                user.avatar = None
-                user.save()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        avatar_data = request.data['avatar']
+        user.avatar = process_base64_avatar(avatar_data)
+        user.save()
+        serializer = UserGetSerializer(user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @avatar.mapping.delete
+    def delete_avatar(self, request):
+        user = request.user
+
+        if not user.avatar:
             return Response(
                 {'error': 'Аватар не установлен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        user.avatar.delete(save=False)
+        user.avatar = None
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -195,9 +195,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return RecipePostSerializer
 
-    @action(methods=["POST", "DELETE"], detail=True)
+    @action(
+        methods=['POST'],
+        detail=True,
+        permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, **kwargs):
-        return post_and_delete_action(
+        return create_related_object(
             self,
             request,
             Recipe,
@@ -206,14 +210,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
             **kwargs
         )
 
-    @action(methods=["POST", "DELETE"], detail=True)
+    @favorite.mapping.delete
+    def remove_favorite(self, request, **kwargs):
+        return delete_related_object(
+            request,
+            Recipe,
+            Favorite,
+            **kwargs
+        )
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        permission_classes=[IsAuthenticated]
+    )
     def shopping_cart(self, request, **kwargs):
-        return post_and_delete_action(
+        return create_related_object(
             self,
             request,
             Recipe,
             ShoppingCart,
             ShoppingCartSerializer,
+            **kwargs
+        )
+
+    @shopping_cart.mapping.delete
+    def remove_shopping_cart(self, request, **kwargs):
+        return delete_related_object(
+            request,
+            Recipe,
+            ShoppingCart,
             **kwargs
         )
 
@@ -259,22 +285,3 @@ class RecipeViewSet(viewsets.ModelViewSet):
         link = (f"{request.scheme}://{request.get_host()}"
                 f"/s/{short_link.short_code}/")
         return Response({'short-link': link})
-
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def avatar_upload(request):
-    user = request.user
-
-    if 'avatar' in request.data:
-        avatar_data = request.data['avatar']
-        user.avatar = process_base64_avatar(avatar_data)
-
-        user.save()
-        serializer = UserGetSerializer(user, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    return Response(
-        {'avatar': ['Это поле обязательно.']},
-        status=status.HTTP_400_BAD_REQUEST
-    )
