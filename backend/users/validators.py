@@ -1,11 +1,7 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
 
-from foodgram.constants import (
-    INVALID_NAME_MESSAGE,
-    INVALID_USERNAME_MESSAGE,
-    NAME_REGEX,
-)
+from core.validators import name_validator
+from foodgram.constants import INVALID_USERNAME_MESSAGE
 
 
 def check_username(value):
@@ -13,14 +9,8 @@ def check_username(value):
         raise ValidationError(INVALID_USERNAME_MESSAGE)
 
 
-user_name_validator = RegexValidator(
-    regex=NAME_REGEX,
-    message=INVALID_NAME_MESSAGE
-)
-
-
 def get_user_name_validators():
-    return [user_name_validator, check_username]
+    return [name_validator, check_username]
 
 
 def get_username_validators():

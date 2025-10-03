@@ -3,14 +3,13 @@ import secrets
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.db.models import F, Sum
 from django.http import HttpResponse
-from django_filters.rest_framework import DjangoFilterBackend
 
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.serializers import SetPasswordSerializer
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from djoser.serializers import SetPasswordSerializer
 
 from recipes.models import (
     Favorite,
@@ -195,7 +194,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return RecipePostSerializer
 
-    @action(["POST", "DELETE"], detail=True)
+    @action(methods=["POST", "DELETE"], detail=True)
     def favorite(self, request, **kwargs):
         return post_and_delete_action(
             self,
@@ -206,7 +205,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             **kwargs
         )
 
-    @action(["POST", "DELETE"], detail=True)
+    @action(methods=["POST", "DELETE"], detail=True)
     def shopping_cart(self, request, **kwargs):
         return post_and_delete_action(
             self,

@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import UniqueConstraint
 
+from core.validators import name_validator
 from foodgram.constants import (
     INGREDIENT_NAME_MAX_LENGTH,
     INGREDIENT_UNIT_MAX_LENGTH,
@@ -12,7 +13,6 @@ from foodgram.constants import (
 from .validators import (
     min_cooking_time_validator,
     min_ingredient_amount_validator,
-    name_validator,
 )
 
 User = get_user_model()
