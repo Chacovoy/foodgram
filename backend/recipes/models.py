@@ -7,6 +7,7 @@ from foodgram.constants import (
     INGREDIENT_NAME_MAX_LENGTH,
     INGREDIENT_UNIT_MAX_LENGTH,
     RECIPE_NAME_MAX_LENGTH,
+    SHORT_CODE_MAX_LENGTH,
     TAG_NAME_MAX_LENGTH,
     TAG_SLUG_MAX_LENGTH,
 )
@@ -138,45 +139,42 @@ class IngredientInRecipe(models.Model):
 class BaseUserRecipe(models.Model):
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='%(class)s_set'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='%(class)s_set'
     )
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)s_set'
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_%(class)s',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.recipe.name} у {self.user.username}'
 
 
 class Favorite(BaseUserRecipe):
-    class Meta:
+    class Meta(BaseUserRecipe.Meta):
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
-        constraints = [
-            UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite',
-            ),
-        ]
 
     def __str__(self):
         return f'{self.recipe.name} в списке избранного у {self.user.username}'
 
 
 class ShoppingCart(BaseUserRecipe):
-    class Meta:
+    class Meta(BaseUserRecipe.Meta):
         verbose_name = 'Рецепт в списке покупок'
         verbose_name_plural = 'Рецепты в списке покупок'
-        constraints = [
-            UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_shopping_cart',
-            ),
-        ]
 
     def __str__(self):
         return f'{self.recipe.name} в списке покупок у {self.user.username}'
@@ -191,7 +189,7 @@ class ShortLink(models.Model):
     )
     short_code = models.CharField(
         'Короткий код',
-        max_length=10,
+        max_length=SHORT_CODE_MAX_LENGTH,
         unique=True,
         db_index=True
     )

@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 
+from foodgram.constants import MIN_VALUE_ZERO
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -257,7 +259,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         cooking_time = data.get('cooking_time')
-        if cooking_time <= 0:
+        if cooking_time <= MIN_VALUE_ZERO:
             raise serializers.ValidationError(
                 {
                     'error': 'Время приготовления не должно быть менее 1 мин.'
@@ -266,7 +268,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         ingredients_list = []
         ingredients_in_recipe = data.get('IngredientsInRecipe')
         for ingredient in ingredients_in_recipe:
-            if ingredient.get('amount') <= 0:
+            if ingredient.get('amount') <= MIN_VALUE_ZERO:
                 raise serializers.ValidationError(
                     {
                         'error': 'Ингредиентов не должно быть менее одного.'

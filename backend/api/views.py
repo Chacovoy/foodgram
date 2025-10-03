@@ -11,6 +11,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from foodgram.constants import SHORT_CODE_LENGTH
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -252,7 +253,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         short_link, created = ShortLink.objects.get_or_create(
             recipe=recipe,
-            defaults={'short_code': secrets.token_urlsafe(6)}
+            defaults={'short_code': secrets.token_urlsafe(SHORT_CODE_LENGTH)}
         )
 
         link = (f"{request.scheme}://{request.get_host()}"

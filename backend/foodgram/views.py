@@ -1,8 +1,11 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 
 from recipes.models import ShortLink
 
 
 def short_link_redirect(request, short_code):
-    short_link = get_object_or_404(ShortLink, short_code=short_code)
+    try:
+        short_link = ShortLink.objects.get(short_code=short_code)
+    except ShortLink.DoesNotExist:
+        return redirect('/not_found/')
     return redirect(f'/recipes/{short_link.recipe.id}/')
