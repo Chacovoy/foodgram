@@ -1,11 +1,8 @@
-from django.core import paginator
-
 from rest_framework.pagination import PageNumberPagination
 
-from .constants import PAGE_SIZE
+from foodgram.constants import PAGE_SIZE, PAGE_SIZE_QUERY_PARAM
 
 
 class CustomPagination(PageNumberPagination):
-    django_paginator_class = paginator.Paginator
-    page_size_query_param = 'limit'
+    page_size_query_param = PAGE_SIZE_QUERY_PARAM
     page_size = PAGE_SIZE

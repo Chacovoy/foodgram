@@ -1,7 +1,7 @@
 from django_filters import rest_framework
 
-from recipes.models import Ingredient, Recipe, Favorite, ShoppingCart
-from .constants import CHOICES_LIST
+from foodgram.constants import CHOICES_LIST
+from recipes.models import Ingredient, Recipe, Tag
 
 
 def strtobool(val):
@@ -31,52 +31,23 @@ class RecipeFilter(rest_framework.FilterSet):
         choices=CHOICES_LIST,
         method='is_in_shopping_cart_method'
     )
-    author = rest_framework.NumberFilter(
-        field_name='author',
-        lookup_expr='exact'
+    author = rest_framework.NumberFilter(field_name='author')
+    tags = rest_framework.ModelMultipleChoiceFilter(
+        field_name='tags__slug',
+        to_field_name='slug',
+        queryset=Tag.objects.all()
     )
-    tags = rest_framework.CharFilter(
-        method='filter_tags'
-    )
-
-    def is_favorited_method(self, queryset, name, value):
-        if self.request.user.is_anonymous:
-            return Recipe.objects.none()
-
-        favorites = Favorite.objects.filter(user=self.request.user)
-        recipes = [item.recipe.id for item in favorites]
-        new_queryset = queryset.filter(id__in=recipes)
-
-        if not strtobool(value):
-            return queryset.difference(new_queryset)
-
-        return queryset.filter(id__in=recipes)
-
-    def is_in_shopping_cart_method(self, queryset, name, value):
-        if self.request.user.is_anonymous:
-            return Recipe.objects.none()
-
-        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        recipes = [item.recipe.id for item in shopping_cart]
-        new_queryset = queryset.filter(id__in=recipes)
-
-        if not strtobool(value):
-            return queryset.difference(new_queryset)
-
-        return queryset.filter(id__in=recipes)
-
-    def filter_tags(self, queryset, name, value):
-        if not value:
-            return queryset
-
-        tag_slugs = [slug.strip() for slug in value.split(',')
-                     if slug.strip()]
-
-        if not tag_slugs:
-            return queryset
-
-        return queryset.filter(tags__slug__in=tag_slugs).distinct()
 
     class Meta:
         model = Recipe
-        fields = ('author', 'tags')
+        fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
+
+    def is_favorited_method(self, queryset, name, value):
+        if self.request.user.is_authenticated and strtobool(value):
+            return queryset.filter(favorite_set__user=self.request.user)
+        return queryset
+
+    def is_in_shopping_cart_method(self, queryset, name, value):
+        if self.request.user.is_authenticated and strtobool(value):
+            return queryset.filter(shoppingcart_set__user=self.request.user)
+        return queryset

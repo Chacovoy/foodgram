@@ -22,10 +22,10 @@ from recipes.models import (
     Tag,
 )
 from users.models import Subscription
+from .fields import Base64ImageField
 from .filters import IngredientFilter, RecipeFilter
-from .helpers import process_base64_avatar
 from .pagination import CustomPagination
-from .permissions import IsAuthorOrAdminOrReadOnly
+from .permissions import IsAuthorOrAdminOrReadOnlyPermission
 from .serializers import (
     FavoriteSerializer,
     IngredientSerializer,
@@ -76,19 +76,23 @@ class UserViewSet(
     @action(
         detail=False,
         methods=['POST'],
-        permission_classes=[IsAuthenticated, ]
+        permission_classes=[IsAuthenticated]
     )
     def set_password(self, request):
-        serializer = SetPasswordSerializer(data=request.data,
-                                           context={'request': request})
+        serializer = SetPasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
         if serializer.is_valid():
             self.request.user.set_password(serializer.data['new_password'])
             self.request.user.save()
             update_session_auth_hash(request, self.request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response(serializer.errors,
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(
         detail=False,
@@ -144,8 +148,9 @@ class UserViewSet(
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        avatar_data = request.data['avatar']
-        user.avatar = process_base64_avatar(avatar_data)
+        avatar_field = Base64ImageField()
+        avatar_data = avatar_field.to_internal_value(request.data['avatar'])
+        user.avatar = avatar_data
         user.save()
         serializer = UserGetSerializer(user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -182,7 +187,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = [IsAuthorOrAdminOrReadOnly, ]
+    permission_classes = [IsAuthorOrAdminOrReadOnlyPermission]
     filter_backends = (DjangoFilterBackend, )
     filterset_class = RecipeFilter
     pagination_class = CustomPagination
@@ -245,16 +250,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated, ]
+        permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
         user = request.user
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__shopping_cart__user=user).values(
+            recipe__shoppingcart_set__user=user
+        ).values(
             name=F('ingredient__name'),
-            measurement_unit=F('ingredient__measurement_unit')).annotate(
-            amount=Sum('amount')
-        )
+            measurement_unit=F('ingredient__measurement_unit')
+        ).annotate(amount=Sum('amount'))
         data = []
         for ingredient in ingredients:
             data.append(

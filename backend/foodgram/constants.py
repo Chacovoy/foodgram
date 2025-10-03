@@ -14,7 +14,15 @@ MIN_VALUE_ZERO = 0
 
 SHORT_CODE_LENGTH = 6
 
+PAGE_SIZE = 6
+PAGE_SIZE_QUERY_PARAM = 'limit'
+
 NAME_REGEX = r'^[а-яА-ЯёЁa-zA-Z -]+$'
+
+CHOICES_LIST = (
+    ('0', 'False'),
+    ('1', 'True')
+)
 
 INVALID_NAME_MESSAGE = 'Введите корректное имя/название'
 MIN_COOKING_TIME_MESSAGE = 'Время приготовление должно быть не менее минуты'

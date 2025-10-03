@@ -40,7 +40,7 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'last_name', 'first_name', ]
+    REQUIRED_FIELDS = ['username', 'last_name', 'first_name']
 
     class Meta:
         ordering = ('id',)
