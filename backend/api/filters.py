@@ -4,14 +4,8 @@ from foodgram.constants import CHOICES_LIST
 from recipes.models import Ingredient, Recipe, Tag
 
 
-def strtobool(val):
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return True
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return False
-    else:
-        raise ValueError(f"invalid truth value {val}")
+def check_filter_enabled(val):
+    return val.lower() in ('y', 'yes', 't', 'true', 'on', '1')
 
 
 class IngredientFilter(rest_framework.FilterSet):
@@ -43,11 +37,11 @@ class RecipeFilter(rest_framework.FilterSet):
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
     def is_favorited_method(self, queryset, name, value):
-        if self.request.user.is_authenticated and strtobool(value):
+        if self.request.user.is_authenticated and check_filter_enabled(value):
             return queryset.filter(favorite_set__user=self.request.user)
         return queryset
 
     def is_in_shopping_cart_method(self, queryset, name, value):
-        if self.request.user.is_authenticated and strtobool(value):
+        if self.request.user.is_authenticated and check_filter_enabled(value):
             return queryset.filter(shoppingcart_set__user=self.request.user)
         return queryset

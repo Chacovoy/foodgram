@@ -3,6 +3,7 @@ import secrets
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.db.models import F, Sum
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
@@ -53,13 +54,20 @@ class UserViewSet(
     queryset = User.objects.all()
     pagination_class = CustomPagination
 
-    def get_instance(self):
-        return self.request.user
+    def get_queryset(self):
+        if self.action == 'subscriptions':
+            return User.objects.filter(following__user=self.request.user)
+        return super().get_queryset()
+
+    def get_object(self):
+        if self.action == 'me':
+            return self.request.user
+        return super().get_object()
 
     def get_serializer_class(self):
         if self.action in ['subscriptions', 'subscribe']:
             return UserWithRecipesSerializer
-        elif self.request.method == 'GET':
+        elif self.action in ['list', 'retrieve', 'me']:
             return UserGetSerializer
         return UserPostSerializer
 
@@ -69,9 +77,7 @@ class UserViewSet(
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        instance = self.get_instance()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        return self.retrieve(request)
 
     @action(
         detail=False,
@@ -100,14 +106,7 @@ class UserViewSet(
         permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
-        user = request.user
-        subscriptions = User.objects.filter(following__user=user)
-        page = self.paginate_queryset(subscriptions)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(subscriptions, many=True)
-        return Response(serializer.data)
+        return self.list(request)
 
     @action(
         detail=True,
@@ -119,8 +118,9 @@ class UserViewSet(
             self,
             request,
             User,
-            Subscription,
             SubscriptionSerializer,
+            UserWithRecipesSerializer,
+            'author',
             **kwargs
         )
 
@@ -130,6 +130,7 @@ class UserViewSet(
             request,
             User,
             Subscription,
+            'author',
             **kwargs
         )
 
@@ -188,16 +189,15 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthorOrAdminOrReadOnlyPermission]
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = CustomPagination
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action in ['list', 'retrieve']:
             return RecipeGetSerializer
-        elif self.action in ['favorite', 'shopping_cart', ]:
+        elif self.action in ['favorite', 'shopping_cart']:
             return RecipeShortSerializer
-
         return RecipePostSerializer
 
     @action(
@@ -210,8 +210,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             self,
             request,
             Recipe,
-            Favorite,
             FavoriteSerializer,
+            RecipeShortSerializer,
+            'recipe',
             **kwargs
         )
 
@@ -221,6 +222,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request,
             Recipe,
             Favorite,
+            'recipe',
             **kwargs
         )
 
@@ -234,8 +236,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             self,
             request,
             Recipe,
-            ShoppingCart,
             ShoppingCartSerializer,
+            RecipeShortSerializer,
+            'recipe',
             **kwargs
         )
 
@@ -245,8 +248,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request,
             Recipe,
             ShoppingCart,
+            'recipe',
             **kwargs
         )
+
+    def generate_shopping_list(self, ingredients):
+        return [
+            f'{ingredient["name"]} - '
+            f'{ingredient["amount"]} '
+            f'{ingredient["measurement_unit"]}'
+            for ingredient in ingredients
+        ]
 
     @action(
         detail=False,
@@ -260,18 +272,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             name=F('ingredient__name'),
             measurement_unit=F('ingredient__measurement_unit')
         ).annotate(amount=Sum('amount'))
-        data = []
-        for ingredient in ingredients:
-            data.append(
-                f'{ingredient["name"]} - '
-                f'{ingredient["amount"]} '
-                f'{ingredient["measurement_unit"]}'
-            )
-        content = 'Список покупок:\n\n' + '\n'.join(data)
+
+        shopping_list = self.generate_shopping_list(ingredients)
+        content = 'Список покупок:\n\n' + '\n'.join(shopping_list)
         filename = 'Shopping_cart.txt'
-        request = HttpResponse(content, content_type='text/plain')
-        request['Content-Disposition'] = f'attachment; filename={filename}'
-        return request
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
 
     @action(
         detail=True,
@@ -290,3 +297,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         link = (f"{request.scheme}://{request.get_host()}"
                 f"/s/{short_link.short_code}/")
         return Response({'short-link': link})
+
+
+def short_link_redirect(request, short_code):
+    try:
+        short_link = ShortLink.objects.get(short_code=short_code)
+    except ShortLink.DoesNotExist:
+        return redirect('/not_found/')
+    return redirect(f'/recipes/{short_link.recipe.id}/')

@@ -53,13 +53,13 @@ class User(AbstractUser):
 
 class Subscription(models.Model):
     user = models.ForeignKey(
-        User,
+        'User',
         on_delete=models.CASCADE,
         related_name='follower',
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
-        User,
+        'User',
         on_delete=models.CASCADE,
         related_name='following',
         verbose_name='Автор, на которого подписываются'

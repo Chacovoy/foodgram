@@ -85,6 +85,13 @@ class UserPostSerializer(UserCreateSerializer):
             'password',
         )
 
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Имя пользователя не может быть "me"'
+            )
+        return value
+
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -107,6 +114,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def to_representation(self, instance):
+        return UserWithRecipesSerializer(
+            instance.author,
+            context=self.context
+        ).data
+
 
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,10 +128,18 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='ingredient.id', read_only=True)
-    name = serializers.CharField(source='ingredient.name', read_only=True)
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit',
+    id = serializers.PrimaryKeyRelatedField(
+        source='ingredient',
+        read_only=True
+    )
+    name = serializers.SlugRelatedField(
+        source='ingredient',
+        slug_field='name',
+        read_only=True
+    )
+    measurement_unit = serializers.SlugRelatedField(
+        source='ingredient',
+        slug_field='measurement_unit',
         read_only=True
     )
 
@@ -129,7 +150,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class IngredientInRecipeWriteSerializer(serializers.Serializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField()
+    amount = serializers.IntegerField(min_value=1)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -233,12 +254,6 @@ class RecipePostSerializer(serializers.ModelSerializer):
         ingredients_list = []
         ingredients_in_recipe = data.get('ingredients')
         for ingredient in ingredients_in_recipe:
-            if ingredient.get('amount') <= MIN_VALUE_ZERO:
-                raise serializers.ValidationError(
-                    {
-                        'error': 'Ингредиентов не должно быть менее одного.'
-                    }
-                )
             ingredients_list.append(ingredient['id'])
         if len(ingredients_list) > len(set(ingredients_list)):
             raise serializers.ValidationError(
@@ -253,7 +268,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data, author=author)
-        recipe.tags.add(*tags)
+        recipe.tags.set(tags)
         self.save_ingredients(recipe, ingredients)
 
         return recipe
@@ -264,19 +279,14 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
         instance = super().update(instance, validated_data)
 
-        instance.tags.clear()
-        instance.tags.add(*tags)
+        instance.tags.set(tags)
         instance.ingredients.clear()
         self.save_ingredients(instance, ingredients)
 
         return instance
 
     def to_representation(self, instance):
-        serializer = RecipeGetSerializer(
-            instance,
-            context={'request': self.context.get('request')}
-        )
-        return serializer.data
+        return RecipeGetSerializer(instance, context=self.context).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
