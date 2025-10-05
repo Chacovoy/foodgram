@@ -3,7 +3,6 @@ import secrets
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.db.models import F, Sum
 from django.http import HttpResponse
-from django.shortcuts import redirect
 
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
@@ -23,16 +22,15 @@ from recipes.models import (
     Tag,
 )
 from users.models import Subscription
-from .fields import Base64ImageField
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrAdminOrReadOnlyPermission
 from .serializers import (
+    AvatarSerializer,
     FavoriteSerializer,
     IngredientSerializer,
     RecipeGetSerializer,
     RecipePostSerializer,
-    RecipeShortSerializer,
     ShoppingCartSerializer,
     SubscriptionSerializer,
     TagSerializer,
@@ -65,7 +63,7 @@ class UserViewSet(
         return super().get_object()
 
     def get_serializer_class(self):
-        if self.action in ['subscriptions', 'subscribe']:
+        if self.action == 'subscriptions':
             return UserWithRecipesSerializer
         elif self.action in ['list', 'retrieve', 'me']:
             return UserGetSerializer
@@ -119,7 +117,6 @@ class UserViewSet(
             request,
             User,
             SubscriptionSerializer,
-            UserWithRecipesSerializer,
             'author',
             **kwargs
         )
@@ -142,18 +139,13 @@ class UserViewSet(
     )
     def avatar(self, request):
         user = request.user
-
-        if 'avatar' not in request.data:
-            return Response(
-                {'avatar': ['Это поле обязательно.']},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        avatar_field = Base64ImageField()
-        avatar_data = avatar_field.to_internal_value(request.data['avatar'])
-        user.avatar = avatar_data
-        user.save()
-        serializer = UserGetSerializer(user, context={'request': request})
+        serializer = AvatarSerializer(
+            user,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @avatar.mapping.delete
@@ -196,8 +188,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
             return RecipeGetSerializer
-        elif self.action in ['favorite', 'shopping_cart']:
-            return RecipeShortSerializer
         return RecipePostSerializer
 
     @action(
@@ -211,7 +201,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request,
             Recipe,
             FavoriteSerializer,
-            RecipeShortSerializer,
             'recipe',
             **kwargs
         )
@@ -237,7 +226,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request,
             Recipe,
             ShoppingCartSerializer,
-            RecipeShortSerializer,
             'recipe',
             **kwargs
         )
@@ -297,11 +285,3 @@ class RecipeViewSet(viewsets.ModelViewSet):
         link = (f"{request.scheme}://{request.get_host()}"
                 f"/s/{short_link.short_code}/")
         return Response({'short-link': link})
-
-
-def short_link_redirect(request, short_code):
-    try:
-        short_link = ShortLink.objects.get(short_code=short_code)
-    except ShortLink.DoesNotExist:
-        return redirect('/not_found/')
-    return redirect(f'/recipes/{short_link.recipe.id}/')

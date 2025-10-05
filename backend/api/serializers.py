@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from foodgram.constants import MIN_VALUE_ZERO
+from foodgram.constants import MIN_INGREDIENT_AMOUNT, MIN_VALUE_ZERO
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -16,6 +16,14 @@ from users.models import Subscription
 from .fields import Base64ImageField
 
 User = get_user_model()
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
 
 
 class UserGetSerializer(UserSerializer):
@@ -65,7 +73,7 @@ class UserWithRecipesSerializer(UserGetSerializer):
         if recipe_limit:
             try:
                 limit = int(recipe_limit)
-                if limit > 0:
+                if limit > MIN_VALUE_ZERO:
                     queryset = queryset[:limit]
             except (ValueError, TypeError):
                 pass
@@ -150,7 +158,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class IngredientInRecipeWriteSerializer(serializers.Serializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(min_value=MIN_INGREDIENT_AMOUNT)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -291,10 +299,6 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    recipe = serializers.PrimaryKeyRelatedField(
-        queryset=Recipe.objects.all(),
-        write_only=True,
-    )
 
     class Meta:
         model = Favorite
@@ -307,13 +311,15 @@ class FavoriteSerializer(serializers.ModelSerializer):
             )
         ]
 
+    def to_representation(self, instance):
+        return RecipeShortSerializer(
+            instance.recipe,
+            context=self.context
+        ).data
+
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    recipe = serializers.PrimaryKeyRelatedField(
-        queryset=Recipe.objects.all(),
-        write_only=True,
-    )
 
     class Meta:
         model = ShoppingCart
@@ -325,3 +331,9 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                 message='Этот рецепт уже добавлен в список покупок.'
             )
         ]
+
+    def to_representation(self, instance):
+        return RecipeShortSerializer(
+            instance.recipe,
+            context=self.context
+        ).data

@@ -5,8 +5,12 @@ from rest_framework.response import Response
 
 
 def create_related_object(
-    self, request, model,
-    serializer_class, response_serializer_class, field_name, **kwargs
+    self,
+    request,
+    model,
+    serializer_class,
+    field_name,
+    **kwargs
 ):
     obj = get_object_or_404(model, id=kwargs['pk'])
 
@@ -17,18 +21,18 @@ def create_related_object(
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
-    response_serializer = response_serializer_class(
-        obj,
-        context={'request': request}
-    )
     return Response(
         status=status.HTTP_201_CREATED,
-        data=response_serializer.data
+        data=serializer.data
     )
 
 
 def delete_related_object(
-    request, model, related_model, field_name, **kwargs
+    request,
+    model,
+    related_model,
+    field_name,
+    **kwargs
 ):
     obj = get_object_or_404(model, id=kwargs['pk'])
 
