@@ -79,7 +79,7 @@ docker-compose up -d
 ## Администрирование
 
 **Данные администратора:**
-- Email: admin@foodgram.com
+- Email: admin@example.com
 - Пароль: admin123
 
 **Админ-панель:** `/admin/`
